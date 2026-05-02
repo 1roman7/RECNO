@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-50 text-gray-800">
-    <div id="app" class="flex h-screen overflow-hidden">
+    <div id="app" class="flex h-screen overflow-hidden relative">
 
         <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300" :class="{'hidden sm:flex': !isMobileMenuOpen}">
             <div class="p-4 text-2xl font-bold border-b border-slate-700 flex justify-between items-center">
@@ -19,7 +19,6 @@
                 </button>
             </div>
 
-            <!-- Language Switcher -->
             <div class="p-4 border-b border-slate-700 flex justify-around">
                 <button @click="setLang('ru')" :class="{'text-blue-400': lang === 'ru', 'text-gray-400': lang !== 'ru'}" class="font-bold hover:text-white transition">RU</button>
                 <button @click="setLang('en')" :class="{'text-blue-400': lang === 'en', 'text-gray-400': lang !== 'en'}" class="font-bold hover:text-white transition">EN</button>
@@ -63,24 +62,122 @@
                 <div v-if="currentTab === 'users'">
                     <div class="flex justify-between items-center mb-6">
                         <h1 class="text-3xl font-bold">{{ t.users }}</h1>
-                        <button @click="addUser" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"><i class="fa-solid fa-plus mr-2"></i>{{ t.add_user }}</button>
+                        <button @click="isAddUserModalOpen = true" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"><i class="fa-solid fa-plus mr-2"></i>{{ t.add_user }}</button>
                     </div>
-                    <!-- Таблица ... -->
-                    <div class="bg-white p-4 rounded border text-gray-500 text-center">{{ t.no_users_yet }}</div>
+
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <table class="w-full text-left border-collapse" v-if="users.length > 0">
+                            <thead>
+                                <tr class="bg-gray-50 border-b">
+                                    <th class="p-4 font-medium text-gray-600">ID / {{ t.username }}</th>
+                                    <th class="p-4 font-medium text-gray-600 hidden md:table-cell">{{ t.status }}</th>
+                                    <th class="p-4 font-medium text-gray-600">{{ t.traffic }}</th>
+                                    <th class="p-4 font-medium text-gray-600 text-right">{{ t.actions }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="user in users" :key="user.id" class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-medium">#{{ user.id }} - {{ user.username }}</td>
+                                    <td class="p-4 hidden md:table-cell">
+                                        <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700">{{ user.status }}</span>
+                                    </td>
+                                    <td class="p-4">{{ formatBytes(user.data_used) }} / {{ user.data_limit === 0 ? t.unlimited : formatBytes(user.data_limit) }}</td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button @click="deleteUser(user.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div v-else class="p-6 text-center text-gray-500">{{ t.no_users_yet }}</div>
+                    </div>
                 </div>
+
+                <!-- Ноды -->
+                <div v-if="currentTab === 'nodes'">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold">{{ t.nodes }}</h1>
+                        <button @click="isAddNodeModalOpen = true" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"><i class="fa-solid fa-plus mr-2"></i>{{ t.add_node }}</button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <table class="w-full text-left border-collapse" v-if="nodes.length > 0">
+                            <thead>
+                                <tr class="bg-gray-50 border-b">
+                                    <th class="p-4 font-medium text-gray-600">{{ t.node_name }}</th>
+                                    <th class="p-4 font-medium text-gray-600">{{ t.address }}</th>
+                                    <th class="p-4 font-medium text-gray-600 text-right">{{ t.actions }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="node in nodes" :key="node.id" class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-medium">{{ node.name }}</td>
+                                    <td class="p-4">{{ node.address }}</td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button @click="deleteNode(node.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div v-else class="p-6 text-center text-gray-500">{{ t.no_nodes_yet }}</div>
+                    </div>
+                </div>
+
+                <!-- Настройки -->
+                <div v-if="currentTab === 'config'">
+                    <h1 class="text-3xl font-bold mb-6">{{ t.settings }}</h1>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                        <p class="text-gray-500 mb-4">{{ t.config_desc }}</p>
+                        <textarea v-model="xrayConfigText" class="w-full h-96 p-4 font-mono text-sm bg-gray-900 text-green-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" spellcheck="false"></textarea>
+                        <button @click="saveConfig" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"><i class="fa-solid fa-save mr-2"></i>{{ t.save }}</button>
+                    </div>
+                </div>
+
             </div>
         </main>
+
+        <!-- Модалка: Добавление пользователя -->
+        <div v-if="isAddUserModalOpen" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold mb-4">{{ t.add_user }}</h2>
+                <input v-model="newUsername" type="text" :placeholder="t.username" class="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <div class="flex justify-end space-x-2">
+                    <button @click="isAddUserModalOpen = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">{{ t.cancel }}</button>
+                    <button @click="submitAddUser" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ t.save }}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка: Добавление ноды -->
+        <div v-if="isAddNodeModalOpen" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold mb-4">{{ t.add_node }}</h2>
+                <input v-model="newNodeName" type="text" :placeholder="t.node_name" class="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input v-model="newNodeAddress" type="text" :placeholder="t.address" class="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <div class="flex justify-end space-x-2">
+                    <button @click="isAddNodeModalOpen = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">{{ t.cancel }}</button>
+                    <button @click="submitAddNode" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{{ t.save }}</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         const translations = {
             ru: {
                 dashboard: "Дашборд", users: "Пользователи", nodes: "Ноды", settings: "Настройки",
-                logout: "Выход", total_users: "Всего пользователей", add_user: "Добавить", no_users_yet: "Пользователей пока нет..."
+                logout: "Выход", total_users: "Всего пользователей", add_user: "Добавить пользователя",
+                no_users_yet: "Пользователей пока нет...", username: "Имя пользователя", status: "Статус",
+                traffic: "Трафик", actions: "Действия", unlimited: "Безлимит", cancel: "Отмена", save: "Сохранить",
+                add_node: "Добавить ноду", node_name: "Название ноды", address: "Адрес (IP/Домен)", no_nodes_yet: "Нод пока нет...",
+                config_desc: "Конфигурация Xray (Master)"
             },
             en: {
                 dashboard: "Dashboard", users: "Users", nodes: "Nodes", settings: "Settings",
-                logout: "Logout", total_users: "Total Users", add_user: "Add User", no_users_yet: "No users yet..."
+                logout: "Logout", total_users: "Total Users", add_user: "Add User",
+                no_users_yet: "No users yet...", username: "Username", status: "Status",
+                traffic: "Traffic", actions: "Actions", unlimited: "Unlimited", cancel: "Cancel", save: "Save",
+                add_node: "Add Node", node_name: "Node Name", address: "Address (IP/Domain)", no_nodes_yet: "No nodes yet...",
+                config_desc: "Xray Configuration (Master)"
             }
         };
 
@@ -92,7 +189,14 @@
                     lang: 'ru',
                     currentTab: 'dashboard',
                     isMobileMenuOpen: false,
-                    users: []
+                    users: [],
+                    nodes: [],
+                    xrayConfigText: "",
+                    isAddUserModalOpen: false,
+                    newUsername: "",
+                    isAddNodeModalOpen: false,
+                    newNodeName: "",
+                    newNodeAddress: ""
                 }
             },
             computed: {
@@ -100,11 +204,79 @@
             },
             methods: {
                 setLang(l) { this.lang = l; localStorage.setItem('recno_lang', l); },
-                async addUser() { /* mock */ }
+                formatBytes(bytes) {
+                    if (bytes === 0) return '0 B';
+                    const k = 1024;
+                    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                },
+                async fetchData() {
+                    try {
+                        const resUsers = await fetch('/api/users/');
+                        if(resUsers.ok) this.users = await resUsers.json();
+
+                        const resNodes = await fetch('/api/nodes/');
+                        if(resNodes.ok) this.nodes = await resNodes.json();
+
+                        const resConfig = await fetch('/api/config/xray');
+                        if(resConfig.ok) {
+                            const data = await resConfig.json();
+                            this.xrayConfigText = JSON.stringify(data.config, null, 2);
+                        }
+                    } catch (e) { console.error("Network Error", e); }
+                },
+                async submitAddUser() {
+                    if(!this.newUsername) return;
+                    try {
+                        await fetch(`/api/users/?username=${this.newUsername}`, { method: 'POST' });
+                        this.isAddUserModalOpen = false;
+                        this.newUsername = "";
+                        this.fetchData();
+                    } catch(e) { console.error(e); }
+                },
+                async deleteUser(id) {
+                    if(!confirm("Удалить?")) return;
+                    try {
+                        await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                        this.fetchData();
+                    } catch(e) { console.error(e); }
+                },
+                async submitAddNode() {
+                    if(!this.newNodeName || !this.newNodeAddress) return;
+                    try {
+                        await fetch(`/api/nodes/?name=${this.newNodeName}&address=${this.newNodeAddress}`, { method: 'POST' });
+                        this.isAddNodeModalOpen = false;
+                        this.newNodeName = "";
+                        this.newNodeAddress = "";
+                        this.fetchData();
+                    } catch(e) { console.error(e); }
+                },
+                async deleteNode(id) {
+                    if(!confirm("Удалить?")) return;
+                    try {
+                        await fetch(`/api/nodes/${id}`, { method: 'DELETE' });
+                        this.fetchData();
+                    } catch(e) { console.error(e); }
+                },
+                async saveConfig() {
+                    try {
+                        const parsed = JSON.parse(this.xrayConfigText);
+                        await fetch(`/api/config/xray`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(parsed)
+                        });
+                        alert(this.t.save + " OK");
+                    } catch(e) {
+                        alert("Invalid JSON");
+                    }
+                }
             },
             mounted() {
                 const saved = localStorage.getItem('recno_lang');
                 if(saved) this.lang = saved;
+                this.fetchData();
             }
         }).mount('#app')
     </script>

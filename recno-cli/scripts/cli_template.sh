@@ -30,7 +30,7 @@ case "$COMMAND" in
         ;;
     default-admin)
         echo "Creating default admin user..."
-        # В реальной утилите здесь будет вызов python скрипта
+
         # /opt/recno/master/venv/bin/python -c "from app.db.database import get_db; create_admin('admin', 'admin')"
         echo "Admin created: admin / admin"
         ;;

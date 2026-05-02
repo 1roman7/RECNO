@@ -1,15 +1,16 @@
 from fastapi import FastAPI
-from app.api.endpoints import users, nodes, config, auth
+from app.api.endpoints import users, nodes, config, auth, sub
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from app.db.database import engine
 from app.db.models import Base
+import os
 
-# Создание таблиц БД при запуске
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="RECNO Master API", description="Панель управления прокси", version="1.0.0")
 
-# Настройки CORS для работы с SPA Frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,8 +23,14 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Авторизаци�
 app.include_router(users.router, prefix="/api/users", tags=["Пользователи"])
 app.include_router(nodes.router, prefix="/api/nodes", tags=["Ноды"])
 app.include_router(config.router, prefix="/api/config", tags=["Настройки"])
+app.include_router(sub.router, prefix="/sub", tags=["Подписки"])
 
-@app.get("/sub/{user_uuid}", tags=["Подписки"])
-def get_subscription(user_uuid: str):
-    """Выдача подписки пользователю"""
-    return {"message": "Здесь будет возвращаться base64 строка с настройками"}
+#
+#
+    #
+
+# Обслуживание статического фронтенда
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
+@app.get("/")
+def serve_spa():
+    return FileResponse(os.path.join(frontend_path, "index.html"))
