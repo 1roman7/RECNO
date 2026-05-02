@@ -29,11 +29,15 @@ def get_users(db: Session = Depends(get_db), current_admin=Depends(get_current_a
     return result
 
 
+
 @router.post("/")
 def create_user(
     username: str = Body(...),
     data_limit: int = Body(0),
     expire_days: int = Body(0),
+    ip_limit: int = Body(0),
+    reset_strategy: str = Body("none"),
+    protocols: list = Body(["vless"]),
     db: Session = Depends(get_db),
     current_admin=Depends(get_current_admin)
 ):
@@ -44,38 +48,39 @@ def create_user(
     if expire_days > 0:
         expire_date = datetime.datetime.utcnow() + datetime.timedelta(days=expire_days)
 
-    new_user = User(username=username, data_limit=data_limit, expire_date=expire_date, sub_id=str(uuid.uuid4()))
+    new_user = User(username=username, data_limit=data_limit, expire_date=expire_date, sub_id=str(uuid.uuid4()), ip_limit=ip_limit, reset_strategy=reset_strategy)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     user_uuid = str(uuid.uuid4())
 
-    # Сохраняем ключ в базу
-    new_key = ProxyKey(
-        user_id=new_user.id,
-        protocol="vless",
-        uuid=user_uuid,
-        remark="Default VLESS"
-    )
-    db.add(new_key)
-    db.commit()
+    for proto in protocols:
+        new_key = ProxyKey(
+            user_id=new_user.id,
+            protocol=proto,
+            uuid=user_uuid,
+            remark=f"Default {proto.upper()}"
+        )
+        db.add(new_key)
 
-    try:
-        local_client = XrayGRPCClient("127.0.0.1", 6020)
-        local_client.add_user("vless-inbound", username, user_uuid)
-    except Exception as e:
-        print(f"Failed to add user to master xray: {e}")
-
-    nodes = db.query(Node).filter(Node.is_active == True).all()
-    for node in nodes:
         try:
-            client = XrayGRPCClient(node.address, node.api_port)
-            client.add_user("vless-inbound", username, user_uuid)
+            local_client = XrayGRPCClient("127.0.0.1", 6020)
+            local_client.add_user(f"{proto}-inbound", username, user_uuid, proto)
         except Exception as e:
-            print(f"Failed to add user to node {node.name}: {e}")
+            print(f"Failed to add {proto} user to master xray: {e}")
 
+        nodes = db.query(Node).filter(Node.is_active == True).all()
+        for node in nodes:
+            try:
+                client = XrayGRPCClient(node.address, node.api_port)
+                client.add_user(f"{proto}-inbound", username, user_uuid, proto)
+            except Exception as e:
+                pass
+
+    db.commit()
     return {"message": f"Пользователь {username} успешно создан", "id": new_user.id}
+
 
 @router.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), current_admin=Depends(get_current_admin)):

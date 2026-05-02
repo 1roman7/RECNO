@@ -35,6 +35,7 @@ def start_scheduler():
     # Запускаем проверку раз в сутки в 00:01
     scheduler.add_job(reset_traffic_job, 'cron', hour=0, minute=1)
     scheduler.add_job(collect_stats_job, 'interval', minutes=5)
+    scheduler.add_job(sync_nodes_job, 'interval', minutes=10)
     scheduler.start()
 
 def collect_stats_job():
@@ -73,4 +74,23 @@ def collect_stats_job():
                     pass
 
     db.commit()
+    db.close()
+
+def sync_nodes_job():
+    db = SessionLocal()
+    users = db.query(User).filter(User.status == "active").all()
+    nodes = db.query(Node).filter(Node.is_active == True).all()
+
+    # Синхронизация: проталкиваем всех активных юзеров на все ноды
+    # Это спасает, если нода отвалилась, перезагрузилась или была добавлена позже
+    for user in users:
+        for node in nodes:
+            try:
+                client = XrayGRPCClient(node.address, node.api_port)
+                # Для каждого ключа юзера (разные протоколы) пушим в соответствующий inbound
+                for key in user.keys:
+                    inbound_tag = f"{key.protocol}-inbound"
+                    client.add_user(inbound_tag, user.username, key.uuid, key.protocol)
+            except Exception:
+                pass
     db.close()

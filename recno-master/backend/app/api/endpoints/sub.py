@@ -16,7 +16,7 @@ def is_browser(user_agent: str) -> bool:
             return True
     return False
 
-@router.get("/{user_uuid}")
+@router.get("/{user_sub_id}")
 def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(get_db)):
     """Выдача подписки или Web UI"""
     user = db.query(User).filter(User.sub_id == user_sub_id).first()

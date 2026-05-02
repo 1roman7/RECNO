@@ -14,7 +14,8 @@ function show_menu() {
     echo "6. Update Xray (Обновить ядро Xray)"
     echo "7. Default Admin (Сброс пароля админа)"
     echo "8. Uninstall"
-    echo "9. Backup Database" (Удалить RECNO (Marzban-like))"
+    echo "8. Uninstall (Удалить RECNO)"
+    echo "9. Backup Database (Бэкап)"
     echo "0. Exit (Выход)"
     echo "========================================="
     read -p "Select option: " OPTION
@@ -105,7 +106,17 @@ print('Admin reset: admin / admin')
                 echo "Uninstalled successfully."
             fi
             ;;
+
+        9)
+            echo "Creating Backup..."
+            mkdir -p /opt/recno/backups
+            tar -czf /opt/recno/backups/backup_$(date +%F_%T).tar.gz /opt/recno/master/backend/recno.db /etc/recno/config.json 2>/dev/null || true
+            echo "Backup saved in /opt/recno/backups"
+            read -p "Press enter to continue..."
+            show_menu
+            ;;
         0)
+
             exit 0
             ;;
         *)
@@ -128,11 +139,3 @@ else
         *) echo "Usage: recno [status|restart|update|uninstall]" ;;
     esac
 fi
-        9)
-            echo "Creating Backup..."
-            mkdir -p /opt/recno/backups
-            tar -czf /opt/recno/backups/backup_$(date +%F_%T).tar.gz /opt/recno/master/backend/recno.db /etc/recno/config.json 2>/dev/null || true
-            echo "Backup saved in /opt/recno/backups"
-            read -p "Press enter to continue..."
-            show_menu
-            ;;
