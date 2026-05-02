@@ -78,7 +78,7 @@ python3 -m venv /opt/recno/master/venv
 cp /opt/recno/master/node_config.template.json /etc/recno/config.json
 
 # Setup CLI
-curl -s -L https://raw.githubusercontent.com/your-repo/recno/main/recno-cli/scripts/marzban_cli_clone.sh -o /usr/local/bin/recno || true
+curl -s -L https://raw.githubusercontent.com/recno-panel/recno/main/recno-cli/scripts/marzban_cli_clone.sh -o /usr/local/bin/recno || true
 chmod +x /usr/local/bin/recno 2>/dev/null || true
 
 echo_info "$MSG_DONE$HOST_ACCESS:$PORT"

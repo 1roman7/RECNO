@@ -56,7 +56,7 @@ chmod +x /usr/local/bin/recno 2>/dev/null || true
 
 echo_info "$MSG_DONE"
 echo_info "Downloading Node Config Template..."
-curl -s -L https://raw.githubusercontent.com/your-repo/recno/main/recno-master/node_config.template.json -o /etc/recno/config.json
+curl -s -L https://raw.githubusercontent.com/recno-panel/recno/main/recno-master/node_config.template.json -o /etc/recno/config.json
 
 echo_info "Configuring systemd service..."
 cat <<SYS > /etc/systemd/system/recno-xray.service

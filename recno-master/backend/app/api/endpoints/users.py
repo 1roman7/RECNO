@@ -10,56 +10,10 @@ import datetime
 
 router = APIRouter()
 
+
 @router.get("/")
 def get_users(db: Session = Depends(get_db), current_admin=Depends(get_current_admin)):
     users = db.query(User).all()
-    # Фоновое обновление можно вынести в cron, но пока обновляем при запросе
-    for user in users:
-        nodes = db.query(Node).filter(Node.is_active == True).all()
-        # Local Master Xray
-        try:
-            local_client = XrayGRPCClient("127.0.0.1", 6020)
-            stats = local_client.get_stats(user.username)
-            user.data_used += (stats["uplink"] + stats["downlink"])
-        except Exception:
-            pass
-        # Remote Nodes
-        for node in nodes:
-            try:
-                client = XrayGRPCClient(node.address, node.api_port)
-                stats = client.get_stats(user.username)
-                user.data_used += (stats["uplink"] + stats["downlink"])
-            except Exception:
-                pass
-
-        # Проверка лимитов и сроков
-        if user.status == "active":
-            if user.data_limit > 0 and user.data_used >= user.data_limit:
-                user.status = "limited"
-                try:
-                    local_client.remove_user("vless-inbound", user.username)
-                except:
-                    pass
-                for n in nodes:
-                    try:
-                        XrayGRPCClient(n.address, n.api_port).remove_user("vless-inbound", user.username)
-                    except:
-                        pass
-                send_telegram_alert(f"Пользователь {user.username} исчерпал лимит трафика!")
-            if user.expire_date and user.expire_date < datetime.datetime.utcnow():
-                user.status = "expired"
-                try:
-                    local_client.remove_user("vless-inbound", user.username)
-                except:
-                    pass
-                for n in nodes:
-                    try:
-                        XrayGRPCClient(n.address, n.api_port).remove_user("vless-inbound", user.username)
-                    except:
-                        pass
-
-    db.commit()
-
     result = []
     for u in users:
         result.append({
@@ -69,9 +23,11 @@ def get_users(db: Session = Depends(get_db), current_admin=Depends(get_current_a
             "data_used": u.data_used,
             "data_limit": u.data_limit,
             "expire_date": u.expire_date.isoformat() if u.expire_date else None,
-            "keys_count": len(u.keys)
+            "keys_count": len(u.keys),
+            "sub_id": u.sub_id
         })
     return result
+
 
 @router.post("/")
 def create_user(
@@ -88,7 +44,7 @@ def create_user(
     if expire_days > 0:
         expire_date = datetime.datetime.utcnow() + datetime.timedelta(days=expire_days)
 
-    new_user = User(username=username, data_limit=data_limit, expire_date=expire_date)
+    new_user = User(username=username, data_limit=data_limit, expire_date=expire_date, sub_id=str(uuid.uuid4()))
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

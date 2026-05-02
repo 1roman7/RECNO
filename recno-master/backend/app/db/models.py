@@ -9,6 +9,7 @@ class Admin(Base):
     __tablename__ = 'admins'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    sub_id = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String)
     is_superadmin = Column(Boolean, default=False) # True - полный доступ, False - только создание подписок
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -29,10 +30,13 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    sub_id = Column(String, unique=True, index=True, nullable=True)
     status = Column(String, default="active") # active, disabled
     expire_date = Column(DateTime, nullable=True)
     data_limit = Column(BigInteger, default=0) # Общий лимит в байтах, 0 - безлимит
-    data_used = Column(BigInteger, default=0)  # Общий использованный трафик
+    data_used = Column(BigInteger, default=0)
+    ip_limit = Column(Integer, default=0) # 0 = безлимит
+    reset_strategy = Column(String, default="none") # none, daily, weekly, monthly, yearly  # Общий использованный трафик
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Ключи пользователя
@@ -51,7 +55,9 @@ class ProxyKey(Base):
 
     uuid = Column(String, index=True, nullable=True) # Внутренний ID для Xray, чтобы считать трафик
 
-    data_used = Column(BigInteger, default=0) # Статистика конкретного ключа
+    data_used = Column(BigInteger, default=0)
+    ip_limit = Column(Integer, default=0) # 0 = безлимит
+    reset_strategy = Column(String, default="none") # none, daily, weekly, monthly, yearly # Статистика конкретного ключа
 
     is_custom = Column(Boolean, default=False) # True - если это сторонний ключ, трафик по нему не считаем
 

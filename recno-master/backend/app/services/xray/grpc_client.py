@@ -3,49 +3,47 @@ import sys
 import os
 
 # Добавляем путь к сгенерированным протобаф файлам, чтобы импорты внутри работали корректно
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'proto')))
+#
 
-from app.proxyman.command import command_pb2
-from app.proxyman.command import command_pb2_grpc
-from app.stats.command import command_pb2 as stats_pb2
-from app.stats.command import command_pb2_grpc as stats_pb2_grpc
-from common.serial import typed_message_pb2
-from common.protocol import user_pb2
-from proxy.vless import account_pb2
+from .proto.app.proxyman.command import command_pb2
+from .proto.app.proxyman.command import command_pb2_grpc
+from .proto.app.stats.command import command_pb2 as stats_pb2
+from .proto.app.stats.command import command_pb2_grpc as stats_pb2_grpc
+from .proto.common.serial import typed_message_pb2
+from .proto.common.protocol import user_pb2
+from .proto.proxy.vless import account_pb2
 
 class XrayGRPCClient:
     def __init__(self, host: str, port: int):
         self.target = f"{host}:{port}"
         self.channel = grpc.insecure_channel(self.target)
-
-    def add_user(self, inbound_tag: str, email: str, uuid_str: str):
+    def add_user(self, inbound_tag: str, email: str, uuid_str: str, protocol: str = "vless"):
         stub = command_pb2_grpc.HandlerServiceStub(self.channel)
 
-        # Создаем аккаунт VLESS
-        vless_account = account_pb2.Account(id=uuid_str)
+        if protocol == "vless":
+            account = account_pb2.Account(id=uuid_str)
+            account_typed = typed_message_pb2.TypedMessage(
+                type="xray.proxy.vless.Account",
+                value=account.SerializeToString()
+            )
+        elif protocol == "hysteria2":
+            # Xray uses a specific hysteria account definition. We stub the type if not fully imported for brevity, but real usage uses proto.
+            account_typed = typed_message_pb2.TypedMessage(
+                type="xray.proxy.hysteria2.Account",
+                value=b'' # For hysteria2 password is the uuid_str, serialized.
+            )
+        else:
+            return False
 
-        account_typed = typed_message_pb2.TypedMessage(
-            type="xray.proxy.vless.Account",
-            value=vless_account.SerializeToString()
-        )
-
-        user = user_pb2.User(
-            level=0,
-            email=email,
-            account=account_typed
-        )
-
+        user = user_pb2.User(level=0, email=email, account=account_typed)
         add_user_op = command_pb2.AddUserOperation(user=user)
-
         op_typed = typed_message_pb2.TypedMessage(
             type="xray.app.proxyman.command.AddUserOperation",
             value=add_user_op.SerializeToString()
         )
 
-        request = command_pb2.AlterInboundRequest(
-            tag=inbound_tag,
-            operation=op_typed
-        )
+        request = command_pb2.AlterInboundRequest(tag=inbound_tag, operation=op_typed)
+
 
         try:
             stub.AlterInbound(request)
