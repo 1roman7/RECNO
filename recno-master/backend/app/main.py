@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.endpoints import users, nodes, config, auth, sub
+from app.api.endpoints import users, nodes, config, auth, sub, system
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -24,6 +24,7 @@ app.include_router(users.router, prefix="/api/users", tags=["Пользоват�
 app.include_router(nodes.router, prefix="/api/nodes", tags=["Ноды"])
 app.include_router(config.router, prefix="/api/config", tags=["Настройки"])
 app.include_router(sub.router, prefix="/sub", tags=["Подписки"])
+app.include_router(system.router, prefix="/api/system", tags=["Система"])
 
 #
 #

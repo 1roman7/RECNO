@@ -7,8 +7,8 @@ import jwt
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 
-SECRET_KEY = "recno-super-secret-key-change-in-prod"
-ALGORITHM = "HS256"
+from app.config import SECRET_KEY, ALGORITHM
+
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # 24 часа
 
 router = APIRouter()

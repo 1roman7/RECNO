@@ -83,7 +83,7 @@ class XrayGRPCClient:
         uplink = 0
 
         try:
-            req_down = stats_pb2.GetStatsRequest(name=f"user>>{email}>>traffic>>downlink", reset=False)
+            req_down = stats_pb2.GetStatsRequest(name=f"user>>{email}>>traffic>>downlink", reset=True)
             res_down = stub.GetStats(req_down)
             if res_down.stat:
                 downlink = res_down.stat.value
@@ -91,7 +91,7 @@ class XrayGRPCClient:
             pass
 
         try:
-            req_up = stats_pb2.GetStatsRequest(name=f"user>>{email}>>traffic>>uplink", reset=False)
+            req_up = stats_pb2.GetStatsRequest(name=f"user>>{email}>>traffic>>uplink", reset=True)
             res_up = stub.GetStats(req_up)
             if res_up.stat:
                 uplink = res_up.stat.value

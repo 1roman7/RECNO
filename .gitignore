@@ -4,3 +4,4 @@ venv/
 .env
 recno.db
 recno-master/backend/app/services/xray/proto/
+.secret
