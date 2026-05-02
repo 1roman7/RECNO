@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RECNO - Панель управления</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Иконки -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div id="app" class="flex h-screen overflow-hidden">
+
+        <!-- Боковая панель (Сайдбар) -->
+        <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300" :class="{'hidden sm:flex': !isMobileMenuOpen}">
+            <div class="p-4 text-2xl font-bold border-b border-slate-700 flex justify-between items-center">
+                <span>RECNO Panel</span>
+                <button @click="isMobileMenuOpen = false" class="sm:hidden text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="#" @click="currentTab = 'dashboard'" :class="{'bg-blue-600': currentTab === 'dashboard'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-chart-pie mr-2"></i> Дашборд</a>
+                <a href="#" @click="currentTab = 'users'" :class="{'bg-blue-600': currentTab === 'users'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-users mr-2"></i> Пользователи</a>
+                <a href="#" @click="currentTab = 'nodes'" :class="{'bg-blue-600': currentTab === 'nodes'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-server mr-2"></i> Ноды</a>
+                <a href="#" @click="currentTab = 'config'" :class="{'bg-blue-600': currentTab === 'config'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-cog mr-2"></i> Настройки Xray</a>
+            </nav>
+            <div class="p-4 border-t border-slate-700">
+                <button class="w-full bg-red-600 hover:bg-red-700 text-white p-2 rounded transition"><i class="fa-solid fa-sign-out-alt mr-2"></i> Выход</button>
+            </div>
+        </aside>
+
+        <!-- Основной контент -->
+        <main class="flex-1 flex flex-col overflow-y-auto">
+            <header class="bg-white shadow-sm p-4 flex justify-between items-center sm:hidden">
+                <span class="text-xl font-bold">RECNO</span>
+                <button @click="isMobileMenuOpen = true" class="text-gray-600 text-2xl">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </header>
+
+            <div class="p-6">
+                <!-- Вкладка: Дашборд -->
+                <div v-if="currentTab === 'dashboard'">
+                    <h1 class="text-3xl font-bold mb-6">Дашборд</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Всего пользователей</p>
+                                <p class="text-3xl font-bold">{{ users.length }}</p>
+                            </div>
+                            <div class="text-blue-500 text-4xl"><i class="fa-solid fa-users"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Пользователи -->
+                <div v-if="currentTab === 'users'">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold">Пользователи</h1>
+                        <button @click="addUser" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"><i class="fa-solid fa-plus mr-2"></i>Добавить</button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b">
+                                    <th class="p-4 font-medium text-gray-600">ID / Имя</th>
+                                    <th class="p-4 font-medium text-gray-600 hidden md:table-cell">Статус</th>
+                                    <th class="p-4 font-medium text-gray-600">Трафик</th>
+                                    <th class="p-4 font-medium text-gray-600 text-right">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="user in users" :key="user.id" class="border-b hover:bg-gray-50">
+                                    <td class="p-4 font-medium">#{{ user.id }} - {{ user.username }}</td>
+                                    <td class="p-4 hidden md:table-cell">
+                                        <span class="px-2 py-1 rounded text-xs" :class="user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">{{ user.status }}</span>
+                                    </td>
+                                    <td class="p-4">{{ (user.data_used / (1024*1024*1024)).toFixed(2) }} GB / {{ user.data_limit === 0 ? 'Безлимит' : (user.data_limit / (1024*1024*1024)).toFixed(2) + ' GB' }}</td>
+                                    <td class="p-4 text-right space-x-2">
+                                        <button @click="deleteUser(user.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    currentTab: 'users',
+                    isMobileMenuOpen: false,
+                    users: []
+                }
+            },
+            methods: {
+                async fetchUsers() {
+                    try {
+                        const res = await fetch('http://127.0.0.1:8000/api/users/');
+                        if(res.ok) this.users = await res.json();
+                    } catch (e) { console.error("Ошибка сети", e); }
+                },
+                async addUser() {
+                    const name = prompt("Введите имя пользователя:");
+                    if(!name) return;
+                    try {
+                        await fetch(`http://127.0.0.1:8000/api/users/?username=${name}`, { method: 'POST' });
+                        this.fetchUsers();
+                    } catch(e) { console.error(e); }
+                },
+                async deleteUser(id) {
+                    if(!confirm("Удалить пользователя?")) return;
+                    try {
+                        await fetch(`http://127.0.0.1:8000/api/users/${id}`, { method: 'DELETE' });
+                        this.fetchUsers();
+                    } catch(e) { console.error(e); }
+                }
+            },
+            mounted() {
+                this.fetchUsers();
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
