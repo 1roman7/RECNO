@@ -74,7 +74,7 @@
             </div>
         </aside>
 
-        <div v-if="!isAuthenticated" class="fixed inset-0 bg-gray-50 dark:bg-slate-950 z-[100] flex items-center justify-center p-4">
+        <div v-show="!isAuthenticated" class="fixed inset-0 bg-gray-50 dark:bg-slate-950 z-[100] flex items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-slate-800 transition-all duration-300 transform scale-100">
                 <div class="text-center mb-8">
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
@@ -117,7 +117,7 @@
             </div>
         </div>
 
-        <main v-if="isAuthenticated" class="flex-1 flex flex-col overflow-y-auto w-full relative z-10">
+        <main v-show="isAuthenticated" class="flex-1 flex flex-col overflow-y-auto w-full relative z-10">
             <header class="bg-white dark:bg-slate-900 shadow-sm p-4 flex justify-between items-center sm:hidden z-40 relative">
                 <span class="text-xl font-bold">RECNO</span>
                 <button @click="isMobileMenuOpen = true" class="text-gray-600 dark:text-gray-300 text-2xl"><i class="fa-solid fa-bars"></i></button>
@@ -339,7 +339,17 @@
             }
         };
 
-        const { createApp } = Vue;
+
+window.addEventListener('error', function(event) {
+    console.error("Global JS Error: ", event.error);
+    alert("JS Error: " + event.error.message);
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+    console.error("Unhandled promise rejection: ", event.reason);
+});
+
+const { createApp } = Vue;
 
         createApp({
             data() {
@@ -612,3 +622,11 @@
                 this.checkAuth();
             }
         }).mount('#app');
+
+        // Failsafe to remove v-cloak if Vue fails to do it for some reason
+        setTimeout(() => {
+            const app = document.getElementById('app');
+            if (app && app.hasAttribute('v-cloak')) {
+                app.removeAttribute('v-cloak');
+            }
+        }, 100);
