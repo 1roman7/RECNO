@@ -37,7 +37,7 @@
             </transition-group>
         </div>
 
-        <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 z-50 border-r border-slate-800" :class="{'hidden sm:flex': !isMobileMenuOpen, 'absolute h-full shadow-2xl': isMobileMenuOpen}">
+        <aside v-show="isAuthenticated" class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 z-50 border-r border-slate-800" :class="{'hidden sm:flex': !isMobileMenuOpen, 'absolute h-full shadow-2xl': isMobileMenuOpen}">
             <div class="p-6 text-xl font-bold border-b border-slate-800 flex justify-between items-center">
                 <span>RECNO <span class="text-xs text-blue-400 align-top">{{ versions.panel_version }}</span></span>
                 <button @click="isMobileMenuOpen = false" class="sm:hidden text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
