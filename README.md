@@ -17,7 +17,7 @@ RECNO — это полнофункциональная, автономная и
 Запустите команду ниже на вашем основном сервере (рекомендуется Ubuntu 22.04 / 24.04). Скрипт спросит у вас предпочитаемый язык и домен. Если домена нет, просто нажмите Enter, скрипт выпустит локальный сертификат по вашему IP.
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/your-repo/recno/main/recno-cli/scripts/install.sh)
+bash <(curl -sL https://raw.githubusercontent.com/1roman7/RECNO/main/recno-cli/scripts/install.sh)
 ```
 
 ### Удаленные ноды (Nodes)
@@ -25,7 +25,7 @@ bash <(curl -sL https://raw.githubusercontent.com/your-repo/recno/main/recno-cli
 На сервере, который вы хотите подключить к вашей панели, запустите агент установки. **Даже если на этом сервере уже есть Marzban (порт 443), это не вызовет конфликта**, RECNO установит изолированный бинарник.
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/your-repo/recno/main/recno-cli/scripts/install_node.sh)
+bash <(curl -sL https://raw.githubusercontent.com/1roman7/RECNO/main/recno-cli/scripts/install_node.sh)
 ```
 
 В админ-панели Master сервера просто добавьте новую Ноду, указав IP адрес этого сервера и порт (по умолчанию 6020).

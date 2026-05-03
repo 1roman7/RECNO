@@ -63,3 +63,54 @@ def get_xray_logs(current_admin=Depends(get_current_admin)):
         return {"logs": logs.stdout}
     except Exception as e:
         return {"logs": str(e)}
+
+
+@router.get("/check_update")
+def check_update(current_admin=Depends(get_current_admin)):
+    """Проверка наличия обновлений для RECNO Panel и Xray-core"""
+    import requests
+
+    # 1. Проверка панели RECNO
+    try:
+        version_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "VERSION")
+        with open(version_file, "r") as f:
+            local_panel_version = f.read().strip()
+    except Exception:
+        local_panel_version = "v1.0.0"
+
+    remote_panel_version = local_panel_version
+    try:
+        # Идем в GitHub репозиторий за последним VERSION
+        r = requests.get("https://raw.githubusercontent.com/1roman7/RECNO/main/VERSION", timeout=5)
+        if r.status_code == 200:
+            remote_panel_version = r.text.strip()
+    except Exception:
+        pass
+
+    # 2. Проверка Xray-core
+    try:
+        xray_version_cmd = subprocess.run(["/opt/recno/xray/xray", "version"], capture_output=True, text=True)
+        local_xray_version = xray_version_cmd.stdout.split("\n")[0].split(" ")[1] if xray_version_cmd.returncode == 0 else "unknown"
+    except Exception:
+        local_xray_version = "unknown"
+
+    remote_xray_version = local_xray_version
+    try:
+        r = requests.get("https://api.github.com/repos/XTLS/Xray-core/releases/latest", timeout=5)
+        if r.status_code == 200:
+            remote_xray_version = r.json().get("tag_name", local_xray_version).lstrip('v')
+    except Exception:
+        pass
+
+    return {
+        "panel": {
+            "local": local_panel_version,
+            "remote": remote_panel_version,
+            "has_update": local_panel_version != remote_panel_version
+        },
+        "xray": {
+            "local": local_xray_version,
+            "remote": remote_xray_version,
+            "has_update": local_xray_version != remote_xray_version and local_xray_version != "unknown"
+        }
+    }
