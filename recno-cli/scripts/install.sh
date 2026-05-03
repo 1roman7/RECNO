@@ -36,11 +36,11 @@ LANG_CHOICE=${LANG_CHOICE:-2}
 if [[ "$LANG_CHOICE" == "1" ]]; then
     MSG_DOMAIN="Enter your domain for the panel (leave blank to use IP address):"
     MSG_PORT="Enter panel port (default: 443):"
-    MSG_DONE="Installation complete! Access your panel at: http://"
+    MSG_DONE="Installation complete! Access your panel at: https://"
 else
     MSG_DOMAIN="Введите домен для панели (оставьте пустым для использования IP адреса):"
     MSG_PORT="Введите порт панели (по умолчанию: 443):"
-    MSG_DONE="Установка завершена! Ваша панель доступна по адресу: http://"
+    MSG_DONE="Установка завершена! Ваша панель доступна по адресу: https://"
 fi
 
 read -p "$MSG_DOMAIN " DOMAIN
@@ -66,12 +66,18 @@ if [[ -n "$DOMAIN" && -d "/etc/letsencrypt/live/$DOMAIN" ]]; then
     cp /etc/letsencrypt/live/$DOMAIN/privkey.pem /etc/recno/certs/private.key
     HOST_ACCESS="$DOMAIN"
     echo_success "Официальный SSL сертификат применен."
+
+chmod 644 /etc/recno/certs/private.key /etc/recno/certs/fullchain.cer
+
 else
     echo_info "Генерация локального SSL сертификата (Self-signed)..."
     IP_ADDR=$(curl -s ifconfig.me)
     HOST_ACCESS=${DOMAIN:-$IP_ADDR}
     openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/recno/certs/private.key -out /etc/recno/certs/fullchain.cer -subj "/CN=$HOST_ACCESS" 2>/dev/null || true
     echo_success "Локальный SSL сертификат создан."
+
+chmod 644 /etc/recno/certs/private.key /etc/recno/certs/fullchain.cer
+
 fi
 
 echo_info "Установка ядра Xray-core (изолировано)..."
@@ -93,6 +99,10 @@ python3 -m venv /opt/recno/master/venv
 echo_success "Python зависимости установлены."
 
 
+
+# Generate a secure random password
+ADMIN_PASS=$(openssl rand -hex 6)
+
 echo_info "Копирование конфигураций и генерация базы данных..."
 cp /opt/recno/master/recno-master/node_config.template.json /etc/recno/config.json
 cd /opt/recno/master/recno-master/backend
@@ -104,7 +114,7 @@ from app.api.endpoints.auth import get_password_hash
 Base.metadata.create_all(bind=engine)
 db = SessionLocal()
 if not db.query(Admin).first():
-    admin = Admin(username='admin', hashed_password=get_password_hash('admin'))
+    admin = Admin(username='admin', hashed_password=get_password_hash('${ADMIN_PASS}'))
     db.add(admin)
 if not db.query(PanelConfig).first():
     config = PanelConfig()
@@ -113,8 +123,8 @@ db.commit()
 db.close()
 "
 cd - > /dev/null
+echo_success "База данных инициализирована (admin / ${ADMIN_PASS})."
 
-echo_success "База данных инициализирована (admin / admin)."
 
 echo_info "Настройка системных сервисов (systemd)..."
 cat <<SYS > /etc/systemd/system/recno-xray.service
@@ -133,6 +143,7 @@ LimitNOFILE=1000000
 WantedBy=multi-user.target
 SYS
 
+
 cat <<SYS > /etc/systemd/system/recno-panel.service
 [Unit]
 Description=RECNO Panel Backend
@@ -141,6 +152,7 @@ After=network.target recno-xray.service
 [Service]
 User=root
 WorkingDirectory=/opt/recno/master/recno-master/backend
+ExecStartPre=/bin/sh -c 'if [ ! -f /etc/recno/certs/private.key ]; then openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/recno/certs/private.key -out /etc/recno/certs/fullchain.cer -subj "/CN=recno.local" 2>/dev/null; fi'
 ExecStart=/opt/recno/master/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port $PORT --ssl-keyfile /etc/recno/certs/private.key --ssl-certfile /etc/recno/certs/fullchain.cer
 Restart=always
 
@@ -148,16 +160,31 @@ Restart=always
 WantedBy=multi-user.target
 SYS
 
+
+
 systemctl daemon-reload
 systemctl enable -q recno-xray recno-panel
 systemctl start recno-xray recno-panel
+
+# Wait a moment for services to spin up
+sleep 3
+
+if ! systemctl is-active --quiet recno-panel; then
+    echo_err "Служба recno-panel не смогла запуститься! Проверьте логи ниже:"
+    journalctl -u recno-panel -n 30 --no-pager
+    exit 1
+fi
+
 
 echo_info "Настройка CLI утилиты..."
 cp /opt/recno/master/recno-cli/scripts/marzban_cli_clone.sh /usr/local/bin/recno
 chmod +x /usr/local/bin/recno
 
-echo -e "\n=================================================="
+
+echo -e "
+=================================================="
 echo_success "$MSG_DONE$HOST_ACCESS:$PORT"
 echo -e "  Логин по умолчанию: ${CYAN}admin${RESET}"
-echo -e "  Пароль по умолчанию: ${CYAN}admin${RESET}"
-echo -e "==================================================\n"
+echo -e "  Пароль по умолчанию: ${CYAN}${ADMIN_PASS}${RESET}"
+echo -e "==================================================
+"
