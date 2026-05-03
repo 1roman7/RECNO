@@ -37,28 +37,28 @@
             </transition-group>
         </div>
 
-        <aside class="w-64 bg-slate-900 dark:bg-slate-900 text-white flex flex-col transition-all duration-300 z-30" :class="{'hidden sm:flex': !isMobileMenuOpen, 'absolute h-full': isMobileMenuOpen}">
-            <div class="p-4 text-xl font-bold border-b border-slate-700 flex justify-between items-center">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 z-50 border-r border-slate-800" :class="{'hidden sm:flex': !isMobileMenuOpen, 'absolute h-full shadow-2xl': isMobileMenuOpen}">
+            <div class="p-6 text-xl font-bold border-b border-slate-800 flex justify-between items-center">
                 <span>RECNO <span class="text-xs text-blue-400 align-top">{{ versions.panel_version }}</span></span>
                 <button @click="isMobileMenuOpen = false" class="sm:hidden text-gray-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
             </div>
 
-            <div class="p-4 border-b border-slate-700 flex justify-around items-center">
+            <div class="p-4 border-b border-slate-800 flex justify-around items-center bg-slate-800/30">
                 <button @click="setLang('ru')" :class="{'text-blue-400': lang === 'ru', 'text-gray-400': lang !== 'ru'}" class="font-bold hover:text-white transition">RU</button>
                 <button @click="setLang('en')" :class="{'text-blue-400': lang === 'en', 'text-gray-400': lang !== 'en'}" class="font-bold hover:text-white transition">EN</button>
                 <button @click="toggleTheme" class="text-gray-400 hover:text-yellow-400 transition ml-2"><i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i></button>
             </div>
 
             <nav class="flex-1 p-4 space-y-2">
-                <a href="#" @click="currentTab = 'dashboard'" :class="{'bg-blue-600': currentTab === 'dashboard'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-chart-pie mr-2"></i> {{ t.dashboard }}</a>
-                <a href="#" @click="currentTab = 'users'" :class="{'bg-blue-600': currentTab === 'users'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-users mr-2"></i> {{ t.users }}</a>
+                <a href="#" @click="currentTab = 'dashboard'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'dashboard'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie mr-2"></i> {{ t.dashboard }}</a>
+                <a href="#" @click="currentTab = 'users'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'users'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-users mr-2"></i> {{ t.users }}</a>
 
-                <a href="#" @click="currentTab = 'nodes'" :class="{'bg-blue-600': currentTab === 'nodes'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-server mr-2"></i> {{ t.nodes }}</a>
-                <a href="#" @click="loadHosts(); currentTab = 'hosts'" :class="{'bg-blue-600': currentTab === 'hosts'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-globe mr-2"></i> Hosts</a>
-                <a href="#" @click="currentTab = 'config'" :class="{'bg-blue-600': currentTab === 'config'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-cog mr-2"></i> {{ t.settings }}</a>
+                <a href="#" @click="currentTab = 'nodes'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'nodes'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-server mr-2"></i> {{ t.nodes }}</a>
+                <a href="#" @click="loadHosts(); currentTab = 'hosts'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'hosts'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-globe mr-2"></i> Hosts</a>
+                <a href="#" @click="currentTab = 'config'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'config'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-cog mr-2"></i> {{ t.settings }}</a>
 
 
-                <a href="#" @click="loadLogs(); currentTab = 'logs'" :class="{'bg-blue-600': currentTab === 'logs'}" class="block p-3 rounded hover:bg-blue-500 transition"><i class="fa-solid fa-terminal mr-2"></i> {{ t.logs }}</a>
+                <a href="#" @click="loadLogs(); currentTab = 'logs'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'logs'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-terminal mr-2"></i> {{ t.logs }}</a>
 
                 <div v-if="updateInfo && (updateInfo.panel.has_update || updateInfo.xray.has_update)" class="mt-4 p-3 bg-yellow-600 rounded text-sm font-bold text-white shadow-lg animate-pulse">
                     <i class="fa-solid fa-bell mr-2"></i> Update Available!
@@ -68,9 +68,9 @@
                 </div>
 
             </nav>
-            <div class="p-4 border-t border-slate-700">
+            <div class="p-6 border-t border-slate-800 bg-slate-800/30">
                 <div class="text-xs text-gray-400 mb-2">Xray: {{ versions.xray_version }}</div>
-                <button @click="logout" class="w-full bg-red-600 hover:bg-red-700 text-white p-2 rounded transition"><i class="fa-solid fa-sign-out-alt mr-2"></i> {{ t.logout }}</button>
+                <button @click="logout" class="w-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-3 rounded-xl transition-all duration-200 font-medium"><i class="fa-solid fa-right-from-bracket mr-2"></i> {{ t.logout }}</button>
             </div>
         </aside>
 
@@ -118,7 +118,7 @@
         </div>
 
         <main v-if="isAuthenticated" class="flex-1 flex flex-col overflow-y-auto w-full relative z-10">
-            <header class="bg-white dark:bg-slate-900 shadow-sm p-4 flex justify-between items-center sm:hidden">
+            <header class="bg-white dark:bg-slate-900 shadow-sm p-4 flex justify-between items-center sm:hidden z-40 relative">
                 <span class="text-xl font-bold">RECNO</span>
                 <button @click="isMobileMenuOpen = true" class="text-gray-600 dark:text-gray-300 text-2xl"><i class="fa-solid fa-bars"></i></button>
             </header>
@@ -129,25 +129,25 @@
                     <h1 class="text-3xl font-bold mb-6">{{ t.dashboard }} <button @click="fetchData" class="text-sm text-gray-400 hover:text-blue-500 ml-2"><i class="fa-solid fa-sync"></i></button></h1>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">CPU</p><p class="text-2xl font-bold">{{ stats.cpu }}%</p></div>
                             <div class="text-blue-500 text-3xl"><i class="fa-solid fa-microchip"></i></div>
                         </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">RAM</p><p class="text-2xl font-bold">{{ stats.ram_percent }}%</p></div>
                             <div class="text-green-500 text-3xl"><i class="fa-solid fa-memory"></i></div>
                         </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">{{ t.total_users }}</p><p class="text-2xl font-bold">{{ stats.users_total }}</p></div>
                             <div class="text-purple-500 text-3xl"><i class="fa-solid fa-users"></i></div>
                         </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">Active Users</p><p class="text-2xl font-bold">{{ stats.users_active }}</p></div>
                             <div class="text-yellow-500 text-3xl"><i class="fa-solid fa-user-check"></i></div>
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 mb-6">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6">
                         <h2 class="text-xl font-bold mb-4">Traffic Usage</h2>
                         <div class="h-64"><canvas id="trafficChart"></canvas></div>
                     </div>
@@ -158,13 +158,13 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                         <h1 class="text-3xl font-bold mb-2 sm:mb-0">{{ t.users }}</h1>
                         <div class="flex space-x-2 w-full sm:w-auto">
-                            <input v-model="searchQuery" type="text" placeholder="Search..." class="border dark:border-slate-700 dark:bg-slate-800 p-2 rounded w-full sm:w-64 focus:outline-none">
-                            <button @click="isAddUserModalOpen = true" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition flex items-center"><i class="fa-solid fa-plus mr-2"></i>{{ t.add_user }}</button>
+                            <div class="relative w-full sm:w-64"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-search text-gray-400"></i></div><input v-model="searchQuery" type="text" placeholder="Search..." class="border border-gray-300 dark:border-slate-700 dark:bg-slate-800 py-2 pl-10 pr-4 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"></div>
+                            <button @click="isAddUserModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center font-medium shadow-sm hover:shadow-md"><i class="fa-solid fa-user-plus mr-2"></i>{{ t.add_user }}</button>
                         </div>
                     </div>
 
-                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 overflow-x-auto">
-                        <table class="w-full text-left border-collapse" v-if="filteredUsers.length > 0">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                        <div class="overflow-x-auto"><table class="w-full text-left border-collapse whitespace-nowrap" v-if="filteredUsers.length > 0">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
                                     <th class="p-4 font-medium text-gray-600 dark:text-gray-300">ID / {{ t.username }}</th>
@@ -196,7 +196,7 @@
                                     </td>
                                 </tr>
                             </tbody>
-                        </table>
+                        </table></div>
                         <div v-else class="p-6 text-center text-gray-500">{{ t.no_users_yet }}</div>
                     </div>
                 </div>
@@ -206,10 +206,10 @@
                 <div v-show="currentTab === 'nodes'">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                         <h1 class="text-3xl font-bold mb-2 sm:mb-0">{{ t.nodes }}</h1>
-                        <button @click="isAddNodeModalOpen = true" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"><i class="fa-solid fa-plus mr-2"></i>{{ t.add_node }}</button>
+                        <button @click="isAddNodeModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-medium shadow-sm hover:shadow-md"><i class="fa-solid fa-server mr-2"></i>{{ t.add_node }}</button>
                     </div>
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                        <table class="w-full text-left border-collapse" v-if="nodes.length > 0">
+                        <div class="overflow-x-auto"><table class="w-full text-left border-collapse whitespace-nowrap" v-if="nodes.length > 0">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
                                     <th class="p-4 font-medium text-gray-600 dark:text-gray-300">{{ t.node_name }}</th>
@@ -226,7 +226,7 @@
                                     </td>
                                 </tr>
                             </tbody>
-                        </table>
+                        </table></div>
                         <div v-else class="p-6 text-center text-gray-500">{{ t.no_nodes_yet }}</div>
                     </div>
                 </div>
@@ -234,16 +234,16 @@
                 <!-- Хосты -->
                 <div v-show="currentTab === 'hosts'">
                     <h1 class="text-3xl font-bold mb-6">Hosts / Inbounds</h1>
-                    <div v-for="host in hosts" :key="host.tag" class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 mb-4">
+                    <div v-for="host in hosts" :key="host.tag" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-4">
                         <h3 class="text-xl font-bold mb-4">{{ host.tag }} ({{ host.protocol }} : {{ host.port }})</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label class="block text-sm mb-1">SNI (Domain)</label>
-                                <input v-model="host.sni" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-2 rounded focus:outline-none">
+                                <input v-model="host.sni" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
                             </div>
                             <div>
                                 <label class="block text-sm mb-1">Fingerprint</label>
-                                <select v-model="host.fingerprint" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-2 rounded focus:outline-none">
+                                <select v-model="host.fingerprint" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
                                     <option value="chrome">Chrome</option>
                                     <option value="safari">Safari</option>
                                     <option value="random">Random</option>
@@ -251,10 +251,10 @@
                             </div>
                             <div>
                                 <label class="block text-sm mb-1">ALPN (comma separated)</label>
-                                <input :value="host.alpn.join(', ')" @input="host.alpn = $event.target.value.split(',').map(s=>s.trim())" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-2 rounded focus:outline-none">
+                                <input :value="host.alpn.join(', ')" @input="host.alpn = $event.target.value.split(',').map(s=>s.trim())" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
                             </div>
                         </div>
-                        <button @click="saveHost(host)" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Save & Restart Xray</button>
+                        <button @click="saveHost(host)" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition shadow-sm"><i class="fa-solid fa-arrows-rotate mr-2"></i>Save & Restart Xray</button>
                     </div>
                 </div>
 
@@ -286,21 +286,21 @@
         </main>
 
         <!-- User Create Modal -->
-        <div v-if="isAddUserModalOpen" class="absolute inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
+        <div v-if="isAddUserModalOpen" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-slate-800">
                 <h2 class="text-2xl font-bold mb-4">{{ t.add_user }}</h2>
                 <label class="block text-sm mb-1">Username</label>
-                <input v-model="newUser.username" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-2 rounded mb-4 focus:outline-none">
+                <input v-model="newUser.username" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
                 <label class="block text-sm mb-1">Data Limit (GB, 0 for unlimited)</label>
-                <input v-model.number="newUser.data_limit_gb" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-2 rounded mb-4 focus:outline-none">
+                <input v-model.number="newUser.data_limit_gb" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
                 <label class="block text-sm mb-1">Expire in Days (0 for never)</label>
-                <input v-model.number="newUser.expire_days" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-2 rounded mb-4 focus:outline-none">
+                <input v-model.number="newUser.expire_days" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
                 <div class="flex justify-end space-x-2 mt-4">
-                    <button @click="isAddUserModalOpen = false" class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded">{{ t.cancel }}</button>
-                    <button @click="submitAddUser" :disabled="isLoading" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center">
+                    <button @click="isAddUserModalOpen = false" class="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium transition">{{ t.cancel }}</button>
+                    <button @click="submitAddUser" :disabled="isLoading" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center shadow-sm">
                         <i v-if="isLoading" class="fa-solid fa-spinner fa-spin mr-2"></i> {{ t.save }}
                     </button>
                 </div>
@@ -308,11 +308,11 @@
         </div>
 
         <!-- QR Modal -->
-        <div v-show="isQRModalOpen" class="absolute inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" @click.self="isQRModalOpen = false">
-            <div class="bg-white p-6 rounded-lg text-center">
+        <div v-show="isQRModalOpen" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300" @click.self="isQRModalOpen = false">
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl text-center border border-gray-100 dark:border-slate-800">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Scan QR Code</h3>
                 <div id="qrcode" class="mx-auto bg-white p-2"></div>
-                <button @click="isQRModalOpen = false" class="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded">Close</button>
+                <button @click="isQRModalOpen = false" class="mt-6 px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-200 text-gray-800 rounded-xl font-medium transition w-full">Close</button>
             </div>
         </div>
 
