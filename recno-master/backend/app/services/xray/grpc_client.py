@@ -11,13 +11,10 @@ from app.services.xray.proto.proxy.vmess import account_pb2 as vmess_account_pb2
 from app.services.xray.proto.proxy.trojan import config_pb2 as trojan_account_pb2
 
 class XrayGRPCClient:
-
-
     def __init__(self, host: str, port: int):
         self.target = f"{host}:{port}"
         self.channel = grpc.insecure_channel(self.target)
-        except Exception:
-            self.channel = grpc.insecure_channel(self.target)
+
 
 
 

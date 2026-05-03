@@ -20,6 +20,7 @@ def get_xray_config(current_admin=Depends(get_current_admin)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка чтения конфига: {e}")
 
+
 @router.post("/xray")
 def update_xray_config(config_json: dict = Body(...), current_admin=Depends(get_current_admin)):
     """Обновить Xray config Master сервера (Встроенный редактор) и перезапустить Xray"""
@@ -30,5 +31,7 @@ def update_xray_config(config_json: dict = Body(...), current_admin=Depends(get_
         # Рестарт Xray для применения настроек
         subprocess.run(["systemctl", "restart", "recno-xray"], check=False)
         return {"message": "Config updated and Xray restarted", "config": config_json}
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Нет прав на запись в файл конфигурации")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка сохранения конфига: {e}")
