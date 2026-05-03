@@ -57,6 +57,8 @@ mkdir -p /opt/recno
 mkdir -p /etc/recno/certs
 
 if [[ -n "$DOMAIN" ]]; then
+    echo_info "Остановка сервисов перед выпуском сертификата (освобождение порта 80)..."
+    systemctl stop nginx 2>/dev/null || true
     echo_info "Выпуск SSL сертификата для $DOMAIN через Let's Encrypt..."
     certbot certonly --standalone -d $DOMAIN --non-interactive --agree-tos --register-unsafely-without-email >> /var/log/recno_certbot.log 2>&1 || { echo_warn "Certbot вернул ошибку. Проверьте логи: cat /var/log/recno_certbot.log"; }
 fi
@@ -66,19 +68,15 @@ if [[ -n "$DOMAIN" && -d "/etc/letsencrypt/live/$DOMAIN" ]]; then
     cp /etc/letsencrypt/live/$DOMAIN/privkey.pem /etc/recno/certs/private.key
     HOST_ACCESS="$DOMAIN"
     echo_success "Официальный SSL сертификат применен."
-
-chmod 644 /etc/recno/certs/private.key /etc/recno/certs/fullchain.cer
-
 else
     echo_info "Генерация локального SSL сертификата (Self-signed)..."
     IP_ADDR=$(curl -s ifconfig.me)
     HOST_ACCESS=${DOMAIN:-$IP_ADDR}
     openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/recno/certs/private.key -out /etc/recno/certs/fullchain.cer -subj "/CN=$HOST_ACCESS" 2>/dev/null || true
     echo_success "Локальный SSL сертификат создан."
+fi
 
 chmod 644 /etc/recno/certs/private.key /etc/recno/certs/fullchain.cer
-
-fi
 
 echo_info "Установка ядра Xray-core (изолировано)..."
 mkdir -p /opt/recno/xray
@@ -132,6 +130,12 @@ apt-get install -y nginx > /dev/null
 
 cat <<NGINX > /etc/nginx/sites-available/recno
 server {
+    listen 80;
+    server_name $HOST_ACCESS;
+    return 301 https://\$host:$PORT\$request_uri;
+}
+
+server {
     listen $PORT ssl http2;
     server_name $HOST_ACCESS;
 
@@ -150,7 +154,7 @@ NGINX
 
 ln -sf /etc/nginx/sites-available/recno /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
-systemctl restart nginx
+systemctl restart nginx || echo_warn "Failed to restart Nginx, check systemctl status nginx"
 
 echo_info "Настройка системных сервисов (systemd)..."
 cat <<SYS > /etc/systemd/system/recno-xray.service
