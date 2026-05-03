@@ -28,16 +28,27 @@
   },
   "inbounds": [
     {
-      "listen": "127.0.0.1",
+      "listen": "0.0.0.0",
       "port": 6020,
       "protocol": "dokodemo-door",
       "settings": {
         "address": "127.0.0.1"
       },
+      "streamSettings": {
+        "security": "none",
+        "tlsSettings": {
+          "certificates": [
+            {
+              "certificateFile": "/etc/recno/certs/fullchain.cer",
+              "keyFile": "/etc/recno/certs/private.key"
+            }
+          ]
+        }
+      },
       "tag": "api-inbound"
     },
     {
-      "port": 443,
+      "port": 4430,
       "protocol": "vless",
       "tag": "vless-inbound",
       "settings": {
@@ -52,6 +63,64 @@
             "h2",
             "http/1.1"
           ],
+          "certificates": [
+            {
+              "certificateFile": "/etc/recno/certs/fullchain.cer",
+              "keyFile": "/etc/recno/certs/private.key"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": 4431,
+      "protocol": "hysteria2",
+      "tag": "hysteria2-inbound",
+      "settings": {
+        "clients": [],
+        "ignoreClientBandwidth": false
+      },
+      "streamSettings": {
+        "network": "udp",
+        "security": "tls",
+        "tlsSettings": {
+          "alpn": [
+            "h3"
+          ],
+          "certificates": [
+            {
+              "certificateFile": "/etc/recno/certs/fullchain.cer",
+              "keyFile": "/etc/recno/certs/private.key"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "port": 4432,
+      "protocol": "vmess",
+      "tag": "vmess-inbound",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/vmess"
+        }
+      }
+    },
+    {
+      "port": 4433,
+      "protocol": "trojan",
+      "tag": "trojan-inbound",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "tls",
+        "tlsSettings": {
           "certificates": [
             {
               "certificateFile": "/etc/recno/certs/fullchain.cer",
@@ -76,7 +145,9 @@
     "domainStrategy": "IPIfNonMatch",
     "rules": [
       {
-        "inboundTag": ["api-inbound"],
+        "inboundTag": [
+          "api-inbound"
+        ],
         "outboundTag": "api",
         "type": "field"
       }
