@@ -35,17 +35,17 @@ LANG_CHOICE=${LANG_CHOICE:-2}
 
 if [[ "$LANG_CHOICE" == "1" ]]; then
     MSG_DOMAIN="Enter your domain for the panel (leave blank to use IP address):"
-    MSG_PORT="Enter panel port (default: 8000):"
+    MSG_PORT="Enter panel port (default: 443):"
     MSG_DONE="Installation complete! Access your panel at: http://"
 else
     MSG_DOMAIN="Введите домен для панели (оставьте пустым для использования IP адреса):"
-    MSG_PORT="Введите порт панели (по умолчанию: 8000):"
+    MSG_PORT="Введите порт панели (по умолчанию: 443):"
     MSG_DONE="Установка завершена! Ваша панель доступна по адресу: http://"
 fi
 
 read -p "$MSG_DOMAIN " DOMAIN
 read -p "$MSG_PORT " PORT
-PORT=${PORT:-8000}
+PORT=${PORT:-443}
 
 echo_info "Установка зависимостей системы (apt-get)..."
 export DEBIAN_FRONTEND=noninteractive
@@ -92,10 +92,12 @@ python3 -m venv /opt/recno/master/venv
 /opt/recno/master/venv/bin/pip install -q -r /opt/recno/master/recno-master/backend/requirements.txt
 echo_success "Python зависимости установлены."
 
+
 echo_info "Копирование конфигураций и генерация базы данных..."
 cp /opt/recno/master/recno-master/node_config.template.json /etc/recno/config.json
+cd /opt/recno/master/recno-master/backend
 /opt/recno/master/venv/bin/python -c "
-import sys; sys.path.append('/opt/recno/master/recno-master/backend')
+import sys
 from app.db.database import engine, SessionLocal
 from app.db.models import Base, Admin, PanelConfig
 from app.api.endpoints.auth import get_password_hash
@@ -110,6 +112,8 @@ if not db.query(PanelConfig).first():
 db.commit()
 db.close()
 "
+cd - > /dev/null
+
 echo_success "База данных инициализирована (admin / admin)."
 
 echo_info "Настройка системных сервисов (systemd)..."

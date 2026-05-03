@@ -33,9 +33,10 @@ def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(g
         "Profile-Title": "RECNO Proxy",
         "profile-web-page-url": f"https://{host}/sub/{user.sub_id}"
     }
-
     if is_browser(user_agent):
         sub_link = f"https://{host}/sub/{user.sub_id}"
+        import html
+        safe_username = html.escape(user.username)
 
         # HTML Page for browser
         html_content = f"""
@@ -53,7 +54,8 @@ def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(g
         <body class="bg-slate-900 text-gray-200 min-h-screen flex items-center justify-center p-4">
             <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-700">
                 <h1 class="text-3xl font-bold text-center text-white mb-2">RECNO PROXY</h1>
-                <p class="text-center text-gray-400 mb-8">Привет, <span class="text-blue-400">{user.username}</span>!</p>
+                <p class="text-center text-gray-400 mb-8">Привет, <span class="text-blue-400">{safe_username}</span>!</p>
+
 
                 <div class="flex justify-center mb-8">
                     <div class="w-48 h-48 relative">
