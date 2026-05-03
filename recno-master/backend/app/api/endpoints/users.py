@@ -63,22 +63,23 @@ def create_user(
             remark=f"Default {proto.upper()}"
         )
         db.add(new_key)
-
-                try:
+        try:
             local_client = XrayGRPCClient("127.0.0.1", 6020)
             local_client.add_user(f"{proto}-inbound", username, user_uuid, proto)
         except Exception as e:
             print(f"Failed to add {proto} user to master xray: {e}")
+
         except Exception as e:
             print(f"Failed to add {proto} user to master xray: {e}")
 
         nodes = db.query(Node).filter(Node.is_active == True).all()
-                for node in nodes:
+        for node in nodes:
             try:
                 client = XrayGRPCClient(node.address, node.api_port)
                 client.add_user(f"{proto}-inbound", username, user_uuid, proto)
             except Exception as e:
                 print(f"Failed to add user to node {node.name}: {e}")
+
             except Exception as e:
                 pass
 

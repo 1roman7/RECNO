@@ -5,21 +5,6 @@ from app.db.database import get_db
 from app.db.models import Admin
 import jwt
 from datetime import datetime, timedelta
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.db.models import Admin
-import jwt
-from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.db.models import Admin
-import jwt
-from datetime import datetime, timedelta
 import bcrypt
 import hashlib
 from app.config import SECRET_KEY, ALGORITHM
@@ -41,7 +26,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(password_hash.encode('utf-8'), hashed_password.encode('utf-8'))
     except Exception:
         return False
-
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
