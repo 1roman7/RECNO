@@ -28,16 +28,20 @@ def generate_sub_links(db: Session, user: User, host: str = "127.0.0.1") -> str:
     if user.expire_date:
         links.append(create_fake_node(f"📅 Истекает: {user.expire_date.strftime('%Y-%m-%d')}", 4))
 
+
     for key in user.keys:
         if key.is_custom and key.link:
             parsed = key.link.split('#')[0] if '#' in key.link else key.link
             links.append(f"{parsed}#{urllib.parse.quote(key.remark)}")
         else:
+            node_addr = key.node.address if key.node else host
             if key.protocol == "vless":
-                # Real implementation parsing from config or db
-                node_addr = key.node.address if key.node else host
-                link = f"vless://{key.uuid}@{node_addr}:443?type=tcp&security=tls&alpn=h2,http/1.1#{urllib.parse.quote(key.remark)}"
+                link = f"vless://{key.uuid}@{node_addr}:8443?type=tcp&security=tls&alpn=h2,http/1.1#{urllib.parse.quote(key.remark)}"
                 links.append(link)
+            elif key.protocol == "hysteria2":
+                link = f"hysteria2://{key.uuid}@{node_addr}:443?sni={node_addr}&alpn=h3#{urllib.parse.quote(key.remark)}"
+                links.append(link)
+
 
     payload = "\n".join(links)
     return base64.b64encode(payload.encode('utf-8')).decode('utf-8')

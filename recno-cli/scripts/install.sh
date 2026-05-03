@@ -58,7 +58,7 @@ mkdir -p /etc/recno/certs
 
 if [[ -n "$DOMAIN" ]]; then
     echo_info "Выпуск SSL сертификата для $DOMAIN через Let's Encrypt..."
-    certbot certonly --standalone -d $DOMAIN --non-interactive --agree-tos --register-unsafely-without-email > /dev/null 2>&1 || echo_warn "Не удалось выпустить сертификат через certbot. Используем Self-signed."
+    certbot certonly --standalone -d $DOMAIN --non-interactive --agree-tos --register-unsafely-without-email >> /var/log/recno_certbot.log 2>&1 || { echo_warn "Certbot вернул ошибку. Проверьте логи: cat /var/log/recno_certbot.log"; }
 fi
 
 if [[ -n "$DOMAIN" && -d "/etc/letsencrypt/live/$DOMAIN" ]]; then
