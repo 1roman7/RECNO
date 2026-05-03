@@ -21,9 +21,10 @@
         .toast-enter-from { opacity: 0; transform: translateY(30px); }
         .toast-leave-to { opacity: 0; transform: translateY(-30px); }
     </style>
+    <style>[v-cloak] { display: none !important; }</style>
 </head>
 <body class="bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-200 transition-colors duration-200">
-    <div id="app" class="flex h-screen overflow-hidden relative">
+    <div id="app" v-cloak class="flex h-screen overflow-hidden relative">
 
         <!-- Toast Notifications -->
         <div class="absolute bottom-4 right-4 z-50 flex flex-col space-y-2">
