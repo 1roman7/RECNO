@@ -126,6 +126,32 @@ cd - > /dev/null
 echo_success "База данных инициализирована (admin / ${ADMIN_PASS})."
 
 
+
+echo_info "Настройка Nginx..."
+apt-get install -y nginx > /dev/null
+
+cat <<NGINX > /etc/nginx/sites-available/recno
+server {
+    listen $PORT ssl http2;
+    server_name $HOST_ACCESS;
+
+    ssl_certificate /etc/recno/certs/fullchain.cer;
+    ssl_certificate_key /etc/recno/certs/private.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+NGINX
+
+ln -sf /etc/nginx/sites-available/recno /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+systemctl restart nginx
+
 echo_info "Настройка системных сервисов (systemd)..."
 cat <<SYS > /etc/systemd/system/recno-xray.service
 [Unit]
@@ -153,7 +179,7 @@ After=network.target recno-xray.service
 User=root
 WorkingDirectory=/opt/recno/master/recno-master/backend
 ExecStartPre=/bin/sh -c 'if [ ! -f /etc/recno/certs/private.key ]; then openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/recno/certs/private.key -out /etc/recno/certs/fullchain.cer -subj "/CN=recno.local" 2>/dev/null; fi'
-ExecStart=/opt/recno/master/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port $PORT --ssl-keyfile /etc/recno/certs/private.key --ssl-certfile /etc/recno/certs/fullchain.cer
+ExecStart=/opt/recno/master/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
 
 [Install]

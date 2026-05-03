@@ -62,7 +62,7 @@
       }
     },
     {
-      "port": 443,
+      "port": 4433,
       "protocol": "hysteria2",
       "tag": "hysteria2-inbound",
       "settings": {
