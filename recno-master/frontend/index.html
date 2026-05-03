@@ -164,7 +164,7 @@
                     </div>
 
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                        <div class="overflow-x-auto"><table class="w-full text-left border-collapse whitespace-nowrap" v-if="filteredUsers.length > 0">
+                        <div class="overflow-x-auto" v-if="filteredUsers.length > 0"><table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
                                     <th class="p-4 font-medium text-gray-600 dark:text-gray-300">ID / {{ t.username }}</th>
@@ -209,7 +209,7 @@
                         <button @click="isAddNodeModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-medium shadow-sm hover:shadow-md"><i class="fa-solid fa-server mr-2"></i>{{ t.add_node }}</button>
                     </div>
                     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                        <div class="overflow-x-auto"><table class="w-full text-left border-collapse whitespace-nowrap" v-if="nodes.length > 0">
+                        <div class="overflow-x-auto" v-if="nodes.length > 0"><table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
                                     <th class="p-4 font-medium text-gray-600 dark:text-gray-300">{{ t.node_name }}</th>
@@ -629,4 +629,8 @@ const { createApp } = Vue;
             if (app && app.hasAttribute('v-cloak')) {
                 app.removeAttribute('v-cloak');
             }
-        }, 100);
+        }, 500);
+
+    </script>
+</body>
+</html>
