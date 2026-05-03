@@ -82,29 +82,26 @@ def create_user(
     return {"message": f"Пользователь {username} успешно создан", "id": new_user.id}
 
 
+
 @router.delete("/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), current_admin=Depends(get_current_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    try:
-        local_client = XrayGRPCClient("127.0.0.1", 6020)
-        local_client.remove_user("vless-inbound", user.username)
-    except Exception:
-        pass
-
     nodes = db.query(Node).filter(Node.is_active == True).all()
-    for node in nodes:
-        try:
-            client = XrayGRPCClient(node.address, node.api_port)
-            client.remove_user("vless-inbound", user.username)
-        except Exception:
-            pass
+    for key in user.keys:
+        inbound_tag = f"{key.protocol}-inbound"
+        try: XrayGRPCClient("127.0.0.1", 6020).remove_user(inbound_tag, user.username)
+        except: pass
+        for node in nodes:
+            try: XrayGRPCClient(node.address, node.api_port).remove_user(inbound_tag, user.username)
+            except: pass
 
     db.delete(user)
     db.commit()
     return {"message": "Пользователь удален"}
+
 
 @router.post("/{user_id}/reset")
 def reset_user_traffic(user_id: int, db: Session = Depends(get_db), current_admin=Depends(get_current_admin)):
@@ -118,16 +115,32 @@ def reset_user_traffic(user_id: int, db: Session = Depends(get_db), current_admi
     db.commit()
     return {"message": "Трафик сброшен"}
 
+
 @router.post("/{user_id}/revoke")
 def revoke_user_subscription(user_id: int, db: Session = Depends(get_db), current_admin=Depends(get_current_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    # В реальности тут нужно удалить старый UUID из Xray и добавить новый
-    # Мы пока просто обновим UUID в БД для ключей
+    # 1. Remove old UUIDs from Xray
+    nodes = db.query(Node).filter(Node.is_active == True).all()
+    for key in user.keys:
+        inbound_tag = f"{key.protocol}-inbound"
+        try: XrayGRPCClient("127.0.0.1", 6020).remove_user(inbound_tag, user.username)
+        except: pass
+        for node in nodes:
+            try: XrayGRPCClient(node.address, node.api_port).remove_user(inbound_tag, user.username)
+            except: pass
+
+    # 2. Update DB with new UUIDs and push to Xray
     for key in user.keys:
         key.uuid = str(uuid.uuid4())
-    db.commit()
+        inbound_tag = f"{key.protocol}-inbound"
+        try: XrayGRPCClient("127.0.0.1", 6020).add_user(inbound_tag, user.username, key.uuid, key.protocol)
+        except: pass
+        for node in nodes:
+            try: XrayGRPCClient(node.address, node.api_port).add_user(inbound_tag, user.username, key.uuid, key.protocol)
+            except: pass
 
+    db.commit()
     return {"message": "Подписка и ключи пересозданы"}

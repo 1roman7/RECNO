@@ -1,33 +1,21 @@
-import grpc
-import sys
-import os
 
-# We must use proper protobuf imports for python
-try:
-    from .proto.app.proxyman.command import command_pb2
-    from .proto.app.proxyman.command import command_pb2_grpc
-    from .proto.app.stats.command import command_pb2 as stats_pb2
-    from .proto.app.stats.command import command_pb2_grpc as stats_pb2_grpc
-    from .proto.common.serial import typed_message_pb2
-    from .proto.common.protocol import user_pb2
-    from .proto.proxy.vless import account_pb2 as vless_account_pb2
-    from .proto.proxy.vmess import account_pb2 as vmess_account_pb2
-    from .proto.proxy.trojan import config_pb2 as trojan_account_pb2
-    HAS_PROTO = True
-except ImportError:
-    HAS_PROTO = False
-    print("Warning: Protobuf files are missing. Run grpcio-tools to compile Xray proto files.")
+import grpc
+from app.services.xray.proto.app.proxyman.command import command_pb2
+from app.services.xray.proto.app.proxyman.command import command_pb2_grpc
+from app.services.xray.proto.app.stats.command import command_pb2 as stats_pb2
+from app.services.xray.proto.app.stats.command import command_pb2_grpc as stats_pb2_grpc
+from app.services.xray.proto.common.serial import typed_message_pb2
+from app.services.xray.proto.common.protocol import user_pb2
+from app.services.xray.proto.proxy.vless import account_pb2 as vless_account_pb2
+from app.services.xray.proto.proxy.vmess import account_pb2 as vmess_account_pb2
+from app.services.xray.proto.proxy.trojan import config_pb2 as trojan_account_pb2
 
 class XrayGRPCClient:
     def __init__(self, host: str, port: int):
         self.target = f"{host}:{port}"
-        if HAS_PROTO:
-            self.channel = grpc.insecure_channel(self.target)
+        self.channel = grpc.insecure_channel(self.target)
 
     def add_user(self, inbound_tag: str, email: str, uuid_str: str, protocol: str = "vless"):
-        if not HAS_PROTO:
-            print(f"STUB: Added user {email} to {inbound_tag}")
-            return True
 
         stub = command_pb2_grpc.HandlerServiceStub(self.channel)
 
@@ -74,8 +62,6 @@ class XrayGRPCClient:
             return False
 
     def remove_user(self, inbound_tag: str, email: str):
-        if not HAS_PROTO:
-            return True
 
         stub = command_pb2_grpc.HandlerServiceStub(self.channel)
         rm_user_op = command_pb2.RemoveUserOperation(email=email)
@@ -91,8 +77,6 @@ class XrayGRPCClient:
             return False
 
     def get_stats(self, email: str):
-        if not HAS_PROTO:
-            return {"uplink": 0, "downlink": 0}
 
         stub = stats_pb2_grpc.StatsServiceStub(self.channel)
         downlink = 0

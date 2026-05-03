@@ -60,13 +60,20 @@ def collect_stats_job():
             except Exception:
                 pass
 
+
         if user.data_limit > 0 and user.data_used >= user.data_limit:
-            user.status = "limited"
-            # Удаляем юзера
-            try:
-                XrayGRPCClient("127.0.0.1", 6020).remove_user("vless-inbound", user.username)
-            except:
-                pass
+            if user.status != "limited":
+                user.status = "limited"
+                # Удаляем юзера
+                for key in user.keys:
+                    inbound_tag = f"{key.protocol}-inbound"
+                    try:
+                        XrayGRPCClient("127.0.0.1", 6020).remove_user(inbound_tag, user.username)
+                    except: pass
+                    for n in nodes:
+                        try:
+                            XrayGRPCClient(n.address, n.api_port).remove_user(inbound_tag, user.username)
+                        except: pass
             for n in nodes:
                 try:
                     XrayGRPCClient(n.address, n.api_port).remove_user("vless-inbound", user.username)
