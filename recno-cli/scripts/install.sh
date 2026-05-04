@@ -107,15 +107,15 @@ cd /opt/recno/master/recno-master/backend
 /opt/recno/master/venv/bin/python -c "
 import sys
 from app.db.database import engine, SessionLocal
-from app.db.models import Base, Admin, PanelConfig
+from app.db.models import Base, Admin, SystemSettings
 from app.api.endpoints.auth import get_password_hash
 Base.metadata.create_all(bind=engine)
 db = SessionLocal()
 if not db.query(Admin).first():
     admin = Admin(username='admin', hashed_password=get_password_hash('${ADMIN_PASS}'))
     db.add(admin)
-if not db.query(PanelConfig).first():
-    config = PanelConfig()
+if not db.query(SystemSettings).first():
+    config = SystemSettings()
     db.add(config)
 db.commit()
 db.close()

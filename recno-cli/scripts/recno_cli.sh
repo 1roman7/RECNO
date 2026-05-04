@@ -28,15 +28,15 @@ function handle_option() {
             systemctl status recno-panel --no-pager || echo "Panel not installed or stopped."
             echo "--- Xray Status ---"
             systemctl status recno-xray --no-pager || echo "Xray not installed or stopped."
-            echo "Press enter to continue..."
-            exit 0
+            echo "Press enter to continue..."; read -r
+            show_menu
             ;;
         2)
             echo "Restarting services..."
             systemctl restart recno-panel recno-xray 2>/dev/null || true
             echo "Done."
-            echo "Press enter to continue..."
-            exit 0
+            echo "Press enter to continue..."; read -r
+            show_menu
             ;;
         3)
             journalctl -u recno-panel -f
@@ -55,8 +55,8 @@ function handle_option() {
             else
                 echo "Panel directory not found. Is this a node?"
             fi
-            echo "Press enter to continue..."
-            exit 0
+            echo "Press enter to continue..."; read -r
+            show_menu
             ;;
         6)
             echo "Updating Xray Core..."
@@ -66,8 +66,8 @@ function handle_option() {
             rm /tmp/xray.zip
             systemctl restart recno-xray
             echo "Xray updated to $XRAY_VERSION."
-            echo "Press enter to continue..."
-            exit 0
+            echo "Press enter to continue..."; read -r
+            show_menu
             ;;
         7)
             echo "Creating/Resetting admin user..."
@@ -89,8 +89,8 @@ print('Admin reset: admin / admin')
             else:
                 echo "Backend not found."
             fi
-            echo "Press enter to continue..."
-            exit 0
+            echo "Press enter to continue..."; read -r
+            show_menu
             ;;
         8)
             echo -n "Are you sure you want to completely remove RECNO? [y/N]: "
@@ -109,8 +109,8 @@ print('Admin reset: admin / admin')
             mkdir -p /opt/recno/backups
             tar -czf /opt/recno/backups/backup_$(date +%F_%T).tar.gz /opt/recno/master/recno-master/backend/recno.db /etc/recno/config.json 2>/dev/null || true
             echo "Backup saved in /opt/recno/backups"
-            echo "Press enter to continue..."
-            exit 0
+            echo "Press enter to continue..."; read -r
+            show_menu
             ;;
         0)
 
@@ -119,13 +119,13 @@ print('Admin reset: admin / admin')
         *)
             echo "Invalid option."
             sleep 1
-            exit 0
+            show_menu
             ;;
     esac
 }
 
 if [ -z "$1" ]; then
-    exit 0
+    show_menu
 else
     # Allow CLI args like `recno restart`
     case "$1" in

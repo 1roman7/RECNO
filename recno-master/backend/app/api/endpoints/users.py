@@ -86,9 +86,7 @@ def create_user(
 
     # Also regenerate config so it persists
     from app.services.xray.config_generator import generate_xray_config
-    import subprocess
     generate_xray_config(db)
-    subprocess.run(["systemctl", "restart", "recno-xray"], check=False)
 
     return {"message": f"Пользователь {username} успешно создан", "id": new_user.id}
 
@@ -120,9 +118,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_admin=Depen
     db.commit()
 
     from app.services.xray.config_generator import generate_xray_config
-    import subprocess
     generate_xray_config(db)
-    subprocess.run(["systemctl", "restart", "recno-xray"], check=False)
 
     return {"message": "Пользователь удален"}
 
@@ -176,8 +172,6 @@ def revoke_user_subscription(user_id: int, db: Session = Depends(get_db), curren
     db.commit()
 
     from app.services.xray.config_generator import generate_xray_config
-    import subprocess
     generate_xray_config(db)
-    subprocess.run(["systemctl", "restart", "recno-xray"], check=False)
 
     return {"message": "Подписка и ключи пересозданы"}
