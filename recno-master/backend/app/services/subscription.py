@@ -1,47 +1,48 @@
 import base64
 import urllib.parse
 from sqlalchemy.orm import Session
-from app.db.models import User, ProxyKey, PanelConfig
-
-def create_fake_node(remark: str, index: int) -> str:
-    dummy_uuid = "00000000-0000-0000-0000-000000000000"
-    safe_remark = urllib.parse.quote(f"{remark}")
-    return f"vless://{dummy_uuid}@127.0.0.1:1{index:03d}?type=tcp&security=none#{safe_remark}"
+from app.db.models import User, CustomKey, Inbound
 
 def generate_sub_links(db: Session, user: User, host: str = "127.0.0.1") -> str:
-    config = db.query(PanelConfig).first()
-    title = config.sub_title if config else "RECNO"
-    desc = config.sub_description if config else ""
-
     links = []
 
-    if title:
-        links.append(create_fake_node(f"🌟 {title}", 1))
-    if desc:
-        links.append(create_fake_node(f"📝 {desc}", 2))
+    # Get UUID from the first ProxyKey or generate a deterministic one for the user?
+    # In the current DB schema, UUID is inside ProxyKey. Let's assume the user has at least one ProxyKey to hold the UUID.
+    user_uuid = None
+    if user.keys:
+        user_uuid = user.keys[0].uuid
 
-    gb_used = user.data_used / (1024**3)
-    gb_limit = user.data_limit / (1024**3) if user.data_limit > 0 else 0
-    limit_str = f"{gb_limit:.2f}GB" if gb_limit > 0 else "Безлимит"
-    links.append(create_fake_node(f"📊 Трафик: {gb_used:.2f}GB / {limit_str}", 3))
+    if user_uuid:
+        inbounds = db.query(Inbound).all()
+        for inbound in inbounds:
+            node_addr = inbound.node.address if inbound.node else host
+            remark = urllib.parse.quote(inbound.remark)
 
-    if user.expire_date:
-        links.append(create_fake_node(f"📅 Истекает: {user.expire_date.strftime('%Y-%m-%d')}", 4))
-
-
-    for key in user.keys:
-        if key.is_custom and key.link:
-            parsed = key.link.split('#')[0] if '#' in key.link else key.link
-            links.append(f"{parsed}#{urllib.parse.quote(key.remark)}")
-        else:
-            node_addr = key.node.address if key.node else host
-            if key.protocol == "vless":
-                link = f"vless://{key.uuid}@{node_addr}:8443?type=tcp&security=tls&alpn=h2,http/1.1#{urllib.parse.quote(key.remark)}"
-                links.append(link)
-            elif key.protocol == "hysteria2":
-                link = f"hysteria2://{key.uuid}@{node_addr}:443?sni={node_addr}&alpn=h3#{urllib.parse.quote(key.remark)}"
+            if inbound.protocol == "vless":
+                link = f"vless://{user_uuid}@{node_addr}:{inbound.port}?type={inbound.transport}&security={inbound.security}"
+                if inbound.sni: link += f"&sni={inbound.sni}"
+                if inbound.fingerprint: link += f"&fp={inbound.fingerprint}"
+                if inbound.alpn: link += f"&alpn={urllib.parse.quote(inbound.alpn)}"
+                if inbound.security == "reality":
+                    if inbound.public_key: link += f"&pbk={inbound.public_key}"
+                    if inbound.short_id: link += f"&sid={inbound.short_id}"
+                link += f"#{remark}"
                 links.append(link)
 
+            elif inbound.protocol == "hysteria2":
+                link = f"hysteria2://{user_uuid}@{node_addr}:{inbound.port}?sni={inbound.sni or node_addr}"
+                if inbound.alpn: link += f"&alpn={urllib.parse.quote(inbound.alpn)}"
+                link += f"#{remark}"
+                links.append(link)
+
+    # Add custom keys (Global + Targeted)
+    global_custom_keys = db.query(CustomKey).filter(CustomKey.is_global == True).all()
+    all_custom_keys = list(set(global_custom_keys + user.custom_keys))
+
+    for ckey in all_custom_keys:
+        if ckey.link:
+            parsed = ckey.link.split('#')[0] if '#' in ckey.link else ckey.link
+            links.append(f"{parsed}#{urllib.parse.quote(ckey.remark)}")
 
     payload = "\n".join(links)
     return base64.b64encode(payload.encode('utf-8')).decode('utf-8')

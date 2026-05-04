@@ -55,35 +55,41 @@ def create_user(
 
     user_uuid = str(uuid.uuid4())
 
-    for proto in protocols:
-        new_key = ProxyKey(
-            user_id=new_user.id,
-            protocol=proto,
-            uuid=user_uuid,
-            remark=f"Default {proto.upper()}"
-        )
-        db.add(new_key)
+    # Ensure every user has at least one ProxyKey to hold their UUID for dynamic generation
+    # Even if they don't have active connections yet, this uuid acts as their primary identity
+    new_key = ProxyKey(
+        user_id=new_user.id,
+        protocol="vless",
+        uuid=user_uuid,
+        remark="Primary"
+    )
+    db.add(new_key)
+
+    from app.db.models import Inbound
+    inbounds = db.query(Inbound).all()
+
+    # Add the user via gRPC to all dynamic inbounds
+    for inb in inbounds:
+        target_host = "127.0.0.1"
+        target_port = 6020
+        if inb.node:
+            target_host = inb.node.address
+            target_port = inb.node.api_port
+
         try:
-            local_client = XrayGRPCClient("127.0.0.1", 6020)
-            local_client.add_user(f"{proto}-inbound", username, user_uuid, proto)
+            client = XrayGRPCClient(target_host, target_port)
+            client.add_user(inb.remark, username, user_uuid, inb.protocol)
         except Exception as e:
-            print(f"Failed to add {proto} user to master xray: {e}")
-
-        except Exception as e:
-            print(f"Failed to add {proto} user to master xray: {e}")
-
-        nodes = db.query(Node).filter(Node.is_active == True).all()
-        for node in nodes:
-            try:
-                client = XrayGRPCClient(node.address, node.api_port)
-                client.add_user(f"{proto}-inbound", username, user_uuid, proto)
-            except Exception as e:
-                print(f"Failed to add user to node {node.name}: {e}")
-
-            except Exception as e:
-                pass
+            print(f"Failed to add user to inbound {inb.remark}: {e}")
 
     db.commit()
+
+    # Also regenerate config so it persists
+    from app.services.xray.config_generator import generate_xray_config
+    import subprocess
+    generate_xray_config(db)
+    subprocess.run(["systemctl", "restart", "recno-xray"], check=False)
+
     return {"message": f"Пользователь {username} успешно создан", "id": new_user.id}
 
 
@@ -94,17 +100,30 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_admin=Depen
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    nodes = db.query(Node).filter(Node.is_active == True).all()
-    for key in user.keys:
-        inbound_tag = f"{key.protocol}-inbound"
-        try: XrayGRPCClient("127.0.0.1", 6020).remove_user(inbound_tag, user.username)
-        except: pass
-        for node in nodes:
-            try: XrayGRPCClient(node.address, node.api_port).remove_user(inbound_tag, user.username)
-            except: pass
+    from app.db.models import Inbound
+    inbounds = db.query(Inbound).all()
+
+    for inb in inbounds:
+        target_host = "127.0.0.1"
+        target_port = 6020
+        if inb.node:
+            target_host = inb.node.address
+            target_port = inb.node.api_port
+
+        try:
+            client = XrayGRPCClient(target_host, target_port)
+            client.remove_user(inb.remark, user.username)
+        except Exception as e:
+            pass
 
     db.delete(user)
     db.commit()
+
+    from app.services.xray.config_generator import generate_xray_config
+    import subprocess
+    generate_xray_config(db)
+    subprocess.run(["systemctl", "restart", "recno-xray"], check=False)
+
     return {"message": "Пользователь удален"}
 
 
@@ -127,25 +146,38 @@ def revoke_user_subscription(user_id: int, db: Session = Depends(get_db), curren
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
+    from app.db.models import Inbound
+    inbounds = db.query(Inbound).all()
+
     # 1. Remove old UUIDs from Xray
-    nodes = db.query(Node).filter(Node.is_active == True).all()
-    for key in user.keys:
-        inbound_tag = f"{key.protocol}-inbound"
-        try: XrayGRPCClient("127.0.0.1", 6020).remove_user(inbound_tag, user.username)
+    for inb in inbounds:
+        target_host = "127.0.0.1"
+        target_port = 6020
+        if inb.node:
+            target_host = inb.node.address
+            target_port = inb.node.api_port
+        try: XrayGRPCClient(target_host, target_port).remove_user(inb.remark, user.username)
         except: pass
-        for node in nodes:
-            try: XrayGRPCClient(node.address, node.api_port).remove_user(inbound_tag, user.username)
-            except: pass
 
     # 2. Update DB with new UUIDs and push to Xray
+    new_uuid = str(uuid.uuid4())
     for key in user.keys:
-        key.uuid = str(uuid.uuid4())
-        inbound_tag = f"{key.protocol}-inbound"
-        try: XrayGRPCClient("127.0.0.1", 6020).add_user(inbound_tag, user.username, key.uuid, key.protocol)
+        key.uuid = new_uuid
+
+    for inb in inbounds:
+        target_host = "127.0.0.1"
+        target_port = 6020
+        if inb.node:
+            target_host = inb.node.address
+            target_port = inb.node.api_port
+        try: XrayGRPCClient(target_host, target_port).add_user(inb.remark, user.username, new_uuid, inb.protocol)
         except: pass
-        for node in nodes:
-            try: XrayGRPCClient(node.address, node.api_port).add_user(inbound_tag, user.username, key.uuid, key.protocol)
-            except: pass
 
     db.commit()
+
+    from app.services.xray.config_generator import generate_xray_config
+    import subprocess
+    generate_xray_config(db)
+    subprocess.run(["systemctl", "restart", "recno-xray"], check=False)
+
     return {"message": "Подписка и ключи пересозданы"}

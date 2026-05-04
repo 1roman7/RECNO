@@ -16,17 +16,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Toast Animations */
         .toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
         .toast-enter-from { opacity: 0; transform: translateY(30px); }
         .toast-leave-to { opacity: 0; transform: translateY(-30px); }
+        [v-cloak] { display: none !important; }
     </style>
-    <style>[v-cloak] { display: none !important; }</style>
 </head>
 <body class="bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-200 transition-colors duration-200">
     <div id="app" v-cloak class="flex h-screen overflow-hidden relative">
 
-        <!-- Toast Notifications -->
+        <!-- Toasts -->
         <div class="absolute bottom-4 right-4 z-50 flex flex-col space-y-2">
             <transition-group name="toast">
                 <div v-for="t in toasts" :key="t.id" class="px-4 py-3 rounded shadow-lg text-white font-medium flex items-center"
@@ -36,6 +35,9 @@
                 </div>
             </transition-group>
         </div>
+
+        <!-- Sidebar / Mobile Menu Backdrop -->
+        <div v-show="isMobileMenuOpen && isAuthenticated" @click="isMobileMenuOpen = false" class="fixed inset-0 bg-black/50 z-40 sm:hidden"></div>
 
         <aside v-show="isAuthenticated" class="w-64 bg-slate-900 text-white flex flex-col transition-all duration-300 z-50 border-r border-slate-800" :class="{'hidden sm:flex': !isMobileMenuOpen, 'absolute h-full shadow-2xl': isMobileMenuOpen}">
             <div class="p-6 text-xl font-bold border-b border-slate-800 flex justify-between items-center">
@@ -49,33 +51,22 @@
                 <button @click="toggleTheme" class="text-gray-400 hover:text-yellow-400 transition ml-2"><i class="fa-solid" :class="isDark ? 'fa-sun' : 'fa-moon'"></i></button>
             </div>
 
-            <nav class="flex-1 p-4 space-y-2">
-                <a href="#" @click="currentTab = 'dashboard'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'dashboard'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie mr-2"></i> {{ t.dashboard }}</a>
-                <a href="#" @click="currentTab = 'users'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'users'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-users mr-2"></i> {{ t.users }}</a>
-
-                <a href="#" @click="currentTab = 'nodes'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'nodes'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-server mr-2"></i> {{ t.nodes }}</a>
-                <a href="#" @click="loadHosts(); currentTab = 'hosts'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'hosts'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-globe mr-2"></i> Hosts</a>
-                <a href="#" @click="currentTab = 'config'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'config'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-cog mr-2"></i> {{ t.settings }}</a>
-
-
-                <a href="#" @click="loadLogs(); currentTab = 'logs'" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'logs'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-terminal mr-2"></i> {{ t.logs }}</a>
-
-                <div v-if="updateInfo && (updateInfo.panel.has_update || updateInfo.xray.has_update)" class="mt-4 p-3 bg-yellow-600 rounded text-sm font-bold text-white shadow-lg animate-pulse">
-                    <i class="fa-solid fa-bell mr-2"></i> Update Available!
-                    <div v-if="updateInfo.panel.has_update" class="mt-1 font-normal">Panel: {{ updateInfo.panel.remote }}</div>
-                    <div v-if="updateInfo.xray.has_update" class="mt-1 font-normal">Xray: {{ updateInfo.xray.remote }}</div>
-                    <div class="mt-2 text-xs font-normal opacity-80">Use CLI to update: `recno update`</div>
-                </div>
-
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <a href="#" @click="currentTab = 'dashboard'; isMobileMenuOpen = false" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'dashboard'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-chart-pie mr-2 w-5"></i> {{ t.dashboard }}</a>
+                <a href="#" @click="currentTab = 'users'; isMobileMenuOpen = false" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'users'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-users mr-2 w-5"></i> {{ t.users }}</a>
+                <a href="#" @click="currentTab = 'inbounds'; loadInbounds(); isMobileMenuOpen = false" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'inbounds'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-network-wired mr-2 w-5"></i> Inbounds</a>
+                <a href="#" @click="currentTab = 'custom_keys'; loadCustomKeys(); isMobileMenuOpen = false" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'custom_keys'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-key mr-2 w-5"></i> Custom Keys</a>
+                <a href="#" @click="currentTab = 'settings'; loadSettings(); isMobileMenuOpen = false" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'settings'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-cog mr-2 w-5"></i> {{ t.settings }}</a>
+                <a href="#" @click="loadLogs(); currentTab = 'logs'; isMobileMenuOpen = false" :class="{'bg-blue-600 text-white shadow-md': currentTab === 'logs'}" class="block p-3 rounded-xl hover:bg-blue-600/50 hover:pl-4 transition-all duration-200 text-slate-300 hover:text-white"><i class="fa-solid fa-terminal mr-2 w-5"></i> {{ t.logs }}</a>
             </nav>
             <div class="p-6 border-t border-slate-800 bg-slate-800/30">
-                <div class="text-xs text-gray-400 mb-2">Xray: {{ versions.xray_version }}</div>
                 <button @click="logout" class="w-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-3 rounded-xl transition-all duration-200 font-medium"><i class="fa-solid fa-right-from-bracket mr-2"></i> {{ t.logout }}</button>
             </div>
         </aside>
 
+        <!-- Login Screen -->
         <div v-show="!isAuthenticated" class="fixed inset-0 bg-gray-50 dark:bg-slate-950 z-[100] flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-slate-800 transition-all duration-300 transform scale-100">
+            <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-slate-800 transition-all duration-300">
                 <div class="text-center mb-8 relative">
                     <div class="absolute right-0 top-0 text-sm">
                         <button @click="setLang('ru')" :class="{'text-blue-600 dark:text-blue-400 font-bold': lang === 'ru', 'text-gray-400': lang !== 'ru'}" class="mr-2 hover:text-gray-900 dark:hover:text-white transition">RU</button>
@@ -102,7 +93,6 @@
                             <input v-model="loginForm.username" type="text" placeholder="admin" class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-slate-700 rounded-xl bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{{ t.password }}</label>
                         <div class="relative">
@@ -112,7 +102,6 @@
                             <input v-model="loginForm.password" type="password" placeholder="••••••••" class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-slate-700 rounded-xl bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" @keyup.enter="login">
                         </div>
                     </div>
-
                     <button @click="login" :disabled="isLoading" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 transition-colors mt-2">
                         <i v-if="isLoading" class="fa-solid fa-circle-notch fa-spin mr-2"></i>
                         <span v-else><i class="fa-solid fa-right-to-bracket mr-2"></i> {{ t.sign_in_btn }}</span>
@@ -122,35 +111,33 @@
         </div>
 
         <main v-show="isAuthenticated" class="flex-1 flex flex-col overflow-y-auto w-full relative z-10">
-            <header class="bg-white dark:bg-slate-900 shadow-sm p-4 flex justify-between items-center sm:hidden z-40 relative">
+            <header class="bg-white dark:bg-slate-900 shadow-sm p-4 flex justify-between items-center sm:hidden z-30 sticky top-0">
                 <span class="text-xl font-bold">RECNO</span>
                 <button @click="isMobileMenuOpen = true" class="text-gray-600 dark:text-gray-300 text-2xl"><i class="fa-solid fa-bars"></i></button>
             </header>
 
-            <div class="p-6">
+            <div class="p-6 max-w-7xl mx-auto w-full">
                 <!-- Dashboard -->
                 <div v-show="currentTab === 'dashboard'">
                     <h1 class="text-3xl font-bold mb-6">{{ t.dashboard }} <button @click="fetchData" class="text-sm text-gray-400 hover:text-blue-500 ml-2"><i class="fa-solid fa-sync"></i></button></h1>
-
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">CPU</p><p class="text-2xl font-bold">{{ stats.cpu }}%</p></div>
                             <div class="text-blue-500 text-3xl"><i class="fa-solid fa-microchip"></i></div>
                         </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">RAM</p><p class="text-2xl font-bold">{{ stats.ram_percent }}%</p></div>
                             <div class="text-green-500 text-3xl"><i class="fa-solid fa-memory"></i></div>
                         </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">{{ t.total_users }}</p><p class="text-2xl font-bold">{{ stats.users_total }}</p></div>
                             <div class="text-purple-500 text-3xl"><i class="fa-solid fa-users"></i></div>
                         </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 dark:border-slate-700 flex items-center justify-between transition-shadow">
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
                             <div><p class="text-gray-500 dark:text-gray-400 text-sm">Active Users</p><p class="text-2xl font-bold">{{ stats.users_active }}</p></div>
                             <div class="text-yellow-500 text-3xl"><i class="fa-solid fa-user-check"></i></div>
                         </div>
                     </div>
-
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-6">
                         <h2 class="text-xl font-bold mb-4">Traffic Usage</h2>
                         <div class="h-64"><canvas id="trafficChart"></canvas></div>
@@ -160,17 +147,20 @@
                 <!-- Users -->
                 <div v-show="currentTab === 'users'">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                        <h1 class="text-3xl font-bold mb-2 sm:mb-0">{{ t.users }}</h1>
-                        <div class="flex space-x-2 w-full sm:w-auto">
-                            <div class="relative w-full sm:w-64"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-search text-gray-400"></i></div><input v-model="searchQuery" type="text" placeholder="Search..." class="border border-gray-300 dark:border-slate-700 dark:bg-slate-800 py-2 pl-10 pr-4 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm"></div>
-                            <button @click="isAddUserModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center font-medium shadow-sm hover:shadow-md"><i class="fa-solid fa-user-plus mr-2"></i>{{ t.add_user }}</button>
+                        <h1 class="text-3xl font-bold mb-4 sm:mb-0">{{ t.users }}</h1>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                            <div class="relative w-full sm:w-64">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-search text-gray-400"></i></div>
+                                <input v-model="searchQuery" type="text" placeholder="Search..." class="border border-gray-300 dark:border-slate-700 dark:bg-slate-800 py-2.5 pl-10 pr-4 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                            </div>
+                            <button @click="isAddUserModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition flex items-center justify-center font-medium shadow-sm"><i class="fa-solid fa-user-plus mr-2"></i>{{ t.add_user }}</button>
                         </div>
                     </div>
 
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
                         <div class="overflow-x-auto" v-if="filteredUsers.length > 0"><table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
+                                <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700 text-sm">
                                     <th class="p-4 font-medium text-gray-600 dark:text-gray-300">ID / {{ t.username }}</th>
                                     <th class="p-4 font-medium text-gray-600 dark:text-gray-300">{{ t.status }}</th>
                                     <th class="p-4 font-medium text-gray-600 dark:text-gray-300">{{ t.traffic }}</th>
@@ -182,106 +172,109 @@
                                 <tr v-for="user in filteredUsers" :key="user.id" class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
                                     <td class="p-4 font-medium">#{{ user.id }} - {{ user.username }}</td>
                                     <td class="p-4">
-                                        <span class="px-2 py-1 rounded text-xs"
-                                              :class="{'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300': user.status==='active',
-                                                       'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300': user.status==='expired',
-                                                       'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300': user.status==='limited'}">
+                                        <span class="px-2 py-1 rounded-md text-xs font-bold"
+                                              :class="{'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400': user.status==='active',
+                                                       'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400': user.status==='expired',
+                                                       'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400': user.status==='limited'}">
                                             {{ user.status.toUpperCase() }}
                                         </span>
                                     </td>
-                                    <td class="p-4">{{ formatBytes(user.data_used) }} / {{ user.data_limit === 0 ? t.unlimited : formatBytes(user.data_limit) }}</td>
-                                    <td class="p-4 hidden sm:table-cell">{{ user.expire_date ? new Date(user.expire_date).toLocaleDateString() : 'Never' }}</td>
-                                    <td class="p-4 text-right space-x-2">
-                                        <button @click="showQR(user.username)" class="text-blue-500 hover:text-blue-700 px-2" title="QR Code"><i class="fa-solid fa-qrcode"></i></button>
-                                        <button @click="copySub(user.username)" class="text-green-500 hover:text-green-700 px-2" title="Copy Subscription"><i class="fa-solid fa-link"></i></button>
-                                        <button @click="resetUser(user.id)" class="text-yellow-500 hover:text-yellow-700 px-2" title="Reset Traffic"><i class="fa-solid fa-rotate-right"></i></button>
-                                        <button @click="revokeUser(user.id)" class="text-purple-500 hover:text-purple-700 px-2" title="Revoke Sub"><i class="fa-solid fa-key"></i></button>
-                                        <button @click="deleteUser(user.id)" class="text-red-500 hover:text-red-700 px-2" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                    <td class="p-4 text-sm">{{ formatBytes(user.data_used) }} / {{ user.data_limit === 0 ? t.unlimited : formatBytes(user.data_limit) }}</td>
+                                    <td class="p-4 hidden sm:table-cell text-sm text-gray-500">{{ user.expire_date ? new Date(user.expire_date).toLocaleDateString() : 'Never' }}</td>
+                                    <td class="p-4 text-right space-x-1 sm:space-x-2">
+                                        <button @click="showQR(user.username)" class="text-blue-500 hover:text-blue-700 p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg" title="QR Code"><i class="fa-solid fa-qrcode"></i></button>
+                                        <button @click="copySub(user.username)" class="text-green-500 hover:text-green-700 p-2 bg-green-50 dark:bg-green-900/30 rounded-lg" title="Copy Subscription"><i class="fa-solid fa-link"></i></button>
+                                        <button @click="resetUser(user.id)" class="text-yellow-500 hover:text-yellow-700 p-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg" title="Reset Traffic"><i class="fa-solid fa-rotate-right"></i></button>
+                                        <button @click="deleteUser(user.id)" class="text-red-500 hover:text-red-700 p-2 bg-red-50 dark:bg-red-900/30 rounded-lg" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                     </td>
                                 </tr>
                             </tbody>
                         </table></div>
-                        <div v-else class="p-6 text-center text-gray-500">{{ t.no_users_yet }}</div>
+                        <div v-else class="p-12 text-center text-gray-500 flex flex-col items-center">
+                            <i class="fa-solid fa-users text-4xl mb-3 opacity-20"></i>
+                            <p>{{ t.no_users_yet }}</p>
+                        </div>
                     </div>
                 </div>
 
-
-                <!-- Ноды -->
-                <div v-show="currentTab === 'nodes'">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                        <h1 class="text-3xl font-bold mb-2 sm:mb-0">{{ t.nodes }}</h1>
-                        <button @click="isAddNodeModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-medium shadow-sm hover:shadow-md"><i class="fa-solid fa-server mr-2"></i>{{ t.add_node }}</button>
+                <!-- Inbounds -->
+                <div v-show="currentTab === 'inbounds'">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold">Inbounds</h1>
+                        <button @click="isInboundModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-medium shadow-sm"><i class="fa-solid fa-plus mr-2"></i>Add Inbound</button>
                     </div>
-                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                        <div class="overflow-x-auto" v-if="nodes.length > 0"><table class="w-full text-left border-collapse whitespace-nowrap">
-                            <thead>
-                                <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
-                                    <th class="p-4 font-medium text-gray-600 dark:text-gray-300">{{ t.node_name }}</th>
-                                    <th class="p-4 font-medium text-gray-600 dark:text-gray-300">{{ t.address }}</th>
-                                    <th class="p-4 font-medium text-gray-600 dark:text-gray-300 text-right">{{ t.actions }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="node in nodes" :key="node.id" class="border-b dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700">
-                                    <td class="p-4 font-medium">{{ node.name }}</td>
-                                    <td class="p-4">{{ node.address }}</td>
-                                    <td class="p-4 text-right space-x-2">
-                                        <button @click="deleteNode(node.id)" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table></div>
-                        <div v-else class="p-6 text-center text-gray-500">{{ t.no_nodes_yet }}</div>
-                    </div>
-                </div>
 
-                <!-- Хосты -->
-                <div v-show="currentTab === 'hosts'">
-                    <h1 class="text-3xl font-bold mb-6">Hosts / Inbounds</h1>
-                    <div v-for="host in hosts" :key="host.tag" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 mb-4">
-                        <h3 class="text-xl font-bold mb-4">{{ host.tag }} ({{ host.protocol }} : {{ host.port }})</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm mb-1">SNI (Domain)</label>
-                                <input v-model="host.sni" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
-                            </div>
-                            <div>
-                                <label class="block text-sm mb-1">Fingerprint</label>
-                                <select v-model="host.fingerprint" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
-                                    <option value="chrome">Chrome</option>
-                                    <option value="safari">Safari</option>
-                                    <option value="random">Random</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm mb-1">ALPN (comma separated)</label>
-                                <input :value="host.alpn.join(', ')" @input="host.alpn = $event.target.value.split(',').map(s=>s.trim())" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" v-if="inbounds.length > 0">
+                        <div v-for="inb in inbounds" :key="inb.id" class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 relative">
+                            <button @click="deleteInbound(inb.id)" class="absolute top-4 right-4 text-red-500 hover:text-red-700 p-2"><i class="fa-solid fa-trash"></i></button>
+                            <h3 class="text-xl font-bold mb-2">{{ inb.remark }}</h3>
+                            <div class="space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                                <p><span class="font-medium text-gray-800 dark:text-gray-100">Protocol:</span> {{ inb.protocol }}</p>
+                                <p><span class="font-medium text-gray-800 dark:text-gray-100">Port:</span> {{ inb.port }}</p>
+                                <p><span class="font-medium text-gray-800 dark:text-gray-100">Transport:</span> {{ inb.transport }}</p>
+                                <p><span class="font-medium text-gray-800 dark:text-gray-100">Security:</span> <span class="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{{ inb.security }}</span></p>
+                                <p v-if="inb.sni"><span class="font-medium text-gray-800 dark:text-gray-100">SNI:</span> {{ inb.sni }}</p>
+                                <p v-if="inb.dest"><span class="font-medium text-gray-800 dark:text-gray-100">Dest (Reality):</span> {{ inb.dest }}</p>
                             </div>
                         </div>
-                        <button @click="saveHost(host)" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition shadow-sm"><i class="fa-solid fa-arrows-rotate mr-2"></i>Save & Restart Xray</button>
+                    </div>
+                    <div v-else class="p-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm text-center border border-slate-700">No inbounds created. Add one to generate configs!</div>
+                </div>
+
+                <!-- Custom Keys -->
+                <div v-show="currentTab === 'custom_keys'">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold">Custom Keys</h1>
+                        <button @click="isCustomKeyModalOpen = true" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-medium shadow-sm"><i class="fa-solid fa-plus mr-2"></i>Add Key</button>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                        <table class="w-full text-left whitespace-nowrap" v-if="customKeys.length > 0">
+                            <tr class="bg-gray-50 dark:bg-slate-900 border-b dark:border-slate-700">
+                                <th class="p-4">Remark</th>
+                                <th class="p-4">Target</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                            <tr v-for="ck in customKeys" :key="ck.id" class="border-b dark:border-slate-700">
+                                <td class="p-4 font-medium">{{ ck.remark }}</td>
+                                <td class="p-4">
+                                    <span v-if="ck.is_global" class="text-green-500 font-bold text-xs bg-green-500/10 px-2 py-1 rounded">GLOBAL</span>
+                                    <span v-else class="text-blue-500 font-bold text-xs bg-blue-500/10 px-2 py-1 rounded">{{ ck.user_ids.length }} Users</span>
+                                </td>
+                                <td class="p-4 text-right"><button @click="deleteCustomKey(ck.id)" class="text-red-500 hover:text-red-700 p-2"><i class="fa-solid fa-trash"></i></button></td>
+                            </tr>
+                        </table>
+                        <div v-else class="p-12 text-center text-gray-500">No custom keys.</div>
                     </div>
                 </div>
 
-                <!-- Настройки -->
-                <div v-show="currentTab === 'config'">
-                    <h1 class="text-3xl font-bold mb-6">{{ t.settings }}</h1>
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700">
-                        <p class="text-gray-500 dark:text-gray-400 mb-4">{{ t.config_desc }}</p>
-                        <textarea v-model="xrayConfigText" class="w-full h-96 p-4 font-mono text-sm bg-gray-900 text-green-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" spellcheck="false"></textarea>
-                        <button @click="saveConfig" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"><i class="fa-solid fa-save mr-2"></i>{{ t.save }}</button>
+                <!-- Settings -->
+                <div v-show="currentTab === 'settings'">
+                    <h1 class="text-3xl font-bold mb-6">Global Settings</h1>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 max-w-2xl">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-1">Subscription Title</label>
+                            <p class="text-xs text-gray-500 mb-2">Название подписки, которое отображается в клиенте (через HTTP Headers).</p>
+                            <input v-model="settingsData.sub_title" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-1">Update Interval (Hours)</label>
+                            <input v-model.number="settingsData.sub_update_interval" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-900 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                        </div>
+                        <button @click="saveSettings" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition shadow-sm w-full sm:w-auto"><i class="fa-solid fa-save mr-2"></i>Save Settings</button>
                     </div>
                 </div>
 
-                <!-- Логи -->
+                <!-- Logs -->
                 <div v-show="currentTab === 'logs'">
                     <div class="flex justify-between items-center mb-6">
                         <h1 class="text-3xl font-bold">{{ t.logs }}</h1>
                         <div class="space-x-2">
-                            <button @click="logType = 'panel'; loadLogs()" :class="logType === 'panel' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-slate-700 dark:text-gray-300'" class="px-4 py-2 rounded transition">Panel Logs</button>
-                            <button @click="logType = 'xray'; loadLogs()" :class="logType === 'xray' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-slate-700 dark:text-gray-300'" class="px-4 py-2 rounded transition">Xray Logs</button>
+                            <button @click="logType = 'panel'; loadLogs()" :class="logType === 'panel' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-slate-700 dark:text-gray-300'" class="px-4 py-2 rounded transition font-medium">Panel</button>
+                            <button @click="logType = 'xray'; loadLogs()" :class="logType === 'xray' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-slate-700 dark:text-gray-300'" class="px-4 py-2 rounded transition font-medium">Xray</button>
                         </div>
                     </div>
-                    <div class="bg-gray-900 rounded-lg p-4 h-[60vh] overflow-y-auto">
+                    <div class="bg-gray-950 rounded-2xl p-4 h-[60vh] overflow-y-auto border border-gray-800 shadow-inner">
                         <pre class="text-green-400 font-mono text-sm whitespace-pre-wrap">{{ logsOutput }}</pre>
                     </div>
                 </div>
@@ -290,19 +283,19 @@
         </main>
 
         <!-- User Create Modal -->
-        <div v-if="isAddUserModalOpen" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300">
+        <div v-show="isAddUserModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-slate-800">
-                <h2 class="text-2xl font-bold mb-4">{{ t.add_user }}</h2>
-                <label class="block text-sm mb-1">Username</label>
+                <h2 class="text-2xl font-bold mb-6">{{ t.add_user }}</h2>
+                <label class="block text-sm font-medium mb-1.5">Username</label>
                 <input v-model="newUser.username" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
-                <label class="block text-sm mb-1">Data Limit (GB, 0 for unlimited)</label>
+                <label class="block text-sm font-medium mb-1.5">Data Limit (GB, 0 for unlimited)</label>
                 <input v-model.number="newUser.data_limit_gb" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
-                <label class="block text-sm mb-1">Expire in Days (0 for never)</label>
-                <input v-model.number="newUser.expire_days" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <label class="block text-sm font-medium mb-1.5">Expire in Days (0 for never)</label>
+                <input v-model.number="newUser.expire_days" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
-                <div class="flex justify-end space-x-2 mt-4">
+                <div class="flex justify-end space-x-3">
                     <button @click="isAddUserModalOpen = false" class="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium transition">{{ t.cancel }}</button>
                     <button @click="submitAddUser" :disabled="isLoading" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center shadow-sm">
                         <i v-if="isLoading" class="fa-solid fa-spinner fa-spin mr-2"></i> {{ t.save }}
@@ -311,11 +304,128 @@
             </div>
         </div>
 
+        <!-- Inbound Create Modal -->
+        <div v-show="isInboundModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-gray-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+                <h2 class="text-2xl font-bold mb-6">Add Inbound</h2>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Target Node</label>
+                    <select v-model="newInbound.node_id" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option :value="null">Master Node (Local)</option>
+                        <option v-for="node in nodes" :key="node.id" :value="node.id">{{ node.name }} ({{ node.address }})</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Remark</label>
+                        <input v-model="newInbound.remark" type="text" placeholder="VLESS Reality" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Port</label>
+                        <input v-model.number="newInbound.port" type="number" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Protocol</label>
+                        <select v-model="newInbound.protocol" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="vless">VLESS</option>
+                            <option value="vmess">VMess</option>
+                            <option value="trojan">Trojan</option>
+                            <option value="hysteria2">Hysteria2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Transport</label>
+                        <select v-model="newInbound.transport" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" :disabled="newInbound.protocol === 'hysteria2'">
+                            <option value="tcp">TCP</option>
+                            <option value="ws">WebSocket</option>
+                            <option value="grpc">gRPC</option>
+                            <option value="xhttp">XHTTP</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Security</label>
+                        <select v-model="newInbound.security" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="none">None</option>
+                            <option value="tls">TLS</option>
+                            <option value="reality">Reality</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Fingerprint</label>
+                        <select v-model="newInbound.fingerprint" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="chrome">Chrome</option>
+                            <option value="safari">Safari</option>
+                            <option value="qq">QQ</option>
+                            <option value="random">Random</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">SNI</label>
+                        <input v-model="newInbound.sni" type="text" placeholder="yahoo.com" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div v-if="newInbound.security === 'reality'">
+                        <label class="block text-sm font-medium mb-1">Dest (Reality)</label>
+                        <input v-model="newInbound.dest" type="text" placeholder="yahoo.com" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div v-if="newInbound.security === 'reality'">
+                        <label class="block text-sm font-medium mb-1">Server Names (comma sep)</label>
+                        <input v-model="newInbound.server_names" type="text" placeholder="yahoo.com,www.yahoo.com" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">ALPN (comma sep)</label>
+                        <input v-model="newInbound.alpn" type="text" placeholder="h2,http/1.1" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button @click="isInboundModalOpen = false" class="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium transition">Cancel</button>
+                    <button @click="submitInbound" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center shadow-sm">Save & Restart</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Key Modal -->
+        <div v-show="isCustomKeyModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-slate-800">
+                <h2 class="text-2xl font-bold mb-6">Add Custom Key</h2>
+                <label class="block text-sm font-medium mb-1.5">Remark</label>
+                <input v-model="newCustomKey.remark" type="text" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="My Secret Key">
+
+                <label class="block text-sm font-medium mb-1.5">Link (vless://...)</label>
+                <textarea v-model="newCustomKey.link" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="3"></textarea>
+
+                <label class="flex items-center space-x-3 mb-4 cursor-pointer">
+                    <input type="checkbox" v-model="newCustomKey.is_global" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600">
+                    <span class="text-sm font-medium">Global (Give to everyone)</span>
+                </label>
+
+                <div v-if="!newCustomKey.is_global" class="mb-6">
+                    <label class="block text-sm font-medium mb-1.5">Select Users</label>
+                    <div class="max-h-32 overflow-y-auto border dark:border-slate-700 rounded-xl p-2 bg-gray-50 dark:bg-slate-800">
+                        <label v-for="u in users" :key="u.id" class="flex items-center space-x-2 p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded cursor-pointer">
+                            <input type="checkbox" :value="u.id" v-model="newCustomKey.user_ids" class="rounded text-blue-600">
+                            <span class="text-sm">{{ u.username }}</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button @click="isCustomKeyModalOpen = false" class="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl font-medium transition">Cancel</button>
+                    <button @click="submitCustomKey" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition shadow-sm">Save</button>
+                </div>
+            </div>
+        </div>
+
         <!-- QR Modal -->
-        <div v-show="isQRModalOpen" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300" @click.self="isQRModalOpen = false">
+        <div v-show="isQRModalOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all duration-300" @click.self="isQRModalOpen = false">
             <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl text-center border border-gray-100 dark:border-slate-800">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">Scan QR Code</h3>
-                <div id="qrcode" class="mx-auto bg-white p-2"></div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Scan QR Code</h3>
+                <div id="qrcode" class="mx-auto bg-white p-2 rounded-xl inline-block"></div>
                 <button @click="isQRModalOpen = false" class="mt-6 px-6 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-gray-200 text-gray-800 rounded-xl font-medium transition w-full">Close</button>
             </div>
         </div>
@@ -323,39 +433,28 @@
     </div>
 
     <script>
-
         const translations = {
             ru: {
-                dashboard: "Дашборд", users: "Пользователи", nodes: "Ноды", settings: "Настройки", logs: "Логи",
+                dashboard: "Дашборд", users: "Пользователи", settings: "Настройки", logs: "Логи",
                 logout: "Выход", total_users: "Всего пользователей", add_user: "Добавить пользователя",
                 no_users_yet: "Пользователей пока нет...", username: "Имя пользователя", status: "Статус",
                 traffic: "Трафик", actions: "Действия", unlimited: "Безлимит", cancel: "Отмена", save: "Сохранить",
-                add_node: "Добавить ноду", node_name: "Название ноды", address: "Адрес (IP/Домен)", no_nodes_yet: "Нод пока нет...",
-                config_desc: "Конфигурация Xray (Master)",
-                sign_in_title: "Вход в панель", sign_in_btn: "Войти", password: "Пароль", invalid_login: "Неверный логин или пароль", server_error: "Ошибка подключения к серверу", success_login: "Успешный вход"
+                sign_in_title: "Вход в панель", sign_in_btn: "Войти", password: "Пароль", invalid_login: "Неверный логин или пароль", server_error: "Ошибка подключения", success_login: "Успешный вход"
             },
             en: {
-                dashboard: "Dashboard", users: "Users", nodes: "Nodes", settings: "Settings", logs: "Logs",
+                dashboard: "Dashboard", users: "Users", settings: "Settings", logs: "Logs",
                 logout: "Logout", total_users: "Total Users", add_user: "Add User",
                 no_users_yet: "No users yet...", username: "Username", status: "Status",
                 traffic: "Traffic", actions: "Actions", unlimited: "Unlimited", cancel: "Cancel", save: "Save",
-                add_node: "Add Node", node_name: "Node Name", address: "Address (IP/Domain)", no_nodes_yet: "No nodes yet...",
-                config_desc: "Xray Configuration (Master)",
-                sign_in_title: "Sign in to proxy panel", sign_in_btn: "Sign In", password: "Password", invalid_login: "Invalid login or password", server_error: "Server connection error", success_login: "Successful login"
+                sign_in_title: "Sign in to panel", sign_in_btn: "Sign In", password: "Password", invalid_login: "Invalid credentials", server_error: "Connection error", success_login: "Success"
             }
         };
 
+        window.addEventListener('error', function(event) {
+            console.error("Global JS Error: ", event.error);
+        });
 
-window.addEventListener('error', function(event) {
-    console.error("Global JS Error: ", event.error);
-    alert("JS Error: " + event.error.message);
-});
-
-window.addEventListener('unhandledrejection', function(event) {
-    console.error("Unhandled promise rejection: ", event.reason);
-});
-
-const { createApp } = Vue;
+        const { createApp } = Vue;
 
         createApp({
             data() {
@@ -374,22 +473,22 @@ const { createApp } = Vue;
 
                     users: [],
                     nodes: [],
-                    hosts: [],
+                    inbounds: [],
+                    customKeys: [],
+                    settingsData: { sub_title: "", sub_update_interval: 24 },
+
                     versions: { panel_version: '...', xray_version: '...' },
-                    xrayConfigText: "",
                     logsOutput: "Loading...",
                     logType: "panel",
-                    updateInfo: null,
-
 
                     isAddUserModalOpen: false,
-                    newUser: { username: '', data_limit_gb: 0, expire_days: 0, ip_limit: 0, reset_strategy: 'none', protocols: ['vless'] },
-                    availableProtocols: ['vless', 'hysteria2'],
+                    newUser: { username: '', data_limit_gb: 0, expire_days: 0, ip_limit: 0, reset_strategy: 'none' },
 
+                    isInboundModalOpen: false,
+                    newInbound: { node_id: null, remark: '', protocol: 'vless', port: 443, transport: 'tcp', security: 'none', sni: '', fingerprint: 'chrome', dest: '', server_names: '', alpn: '' },
 
-                    isAddNodeModalOpen: false,
-                    newNodeName: "",
-                    newNodeAddress: "",
+                    isCustomKeyModalOpen: false,
+                    newCustomKey: { remark: '', link: '', is_global: false, user_ids: [] },
 
                     isQRModalOpen: false,
                     toasts: [],
@@ -404,9 +503,7 @@ const { createApp } = Vue;
                 },
                 stats() {
                     const active = this.users.filter(u => u.status === 'active').length;
-                    return {
-                        cpu: 0, ram_percent: 0, users_total: this.users.length, users_active: active
-                    };
+                    return { cpu: 0, ram_percent: 0, users_total: this.users.length, users_active: active };
                 }
             },
             methods: {
@@ -482,33 +579,80 @@ const { createApp } = Vue;
 
                         const resNodes = await fetch('/api/nodes/', { headers: this.getHeaders() });
                         if(resNodes.ok) this.nodes = await resNodes.json();
-
-                        const resConfig = await fetch('/api/config/xray', { headers: this.getHeaders() });
-                        if(resConfig.ok) {
-                            const data = await resConfig.json();
-                            this.xrayConfigText = JSON.stringify(data.config, null, 2);
-                        }
-
-                        const resUpdate = await fetch('/api/system/check_update', { headers: this.getHeaders() });
-                        if(resUpdate.ok) {
-                            this.updateInfo = await resUpdate.json();
-                        }
                     } catch (e) { console.error("Network Error", e); }
                 },
-                async loadHosts() {
+                async loadInbounds() {
                     try {
-                        const res = await fetch('/api/hosts/', { headers: this.getHeaders() });
-                        if(res.ok) this.hosts = await res.json();
+                        const res = await fetch('/api/inbounds/', { headers: this.getHeaders() });
+                        if(res.ok) this.inbounds = await res.json();
                     } catch(e) { console.error(e); }
                 },
-                async saveHost(host) {
+                async submitInbound() {
+                    if(!this.newInbound.remark || !this.newInbound.port) return;
                     try {
-                        const res = await fetch('/api/hosts/', {
+                        const res = await fetch('/api/inbounds/', {
                             method: 'POST',
                             headers: this.getHeaders(),
-                            body: JSON.stringify(host)
+                            body: JSON.stringify(this.newInbound)
                         });
-                        if(res.ok) this.showToast("Настройки хоста применены", "success");
+                        if(res.ok) {
+                            this.isInboundModalOpen = false;
+                            this.showToast("Inbound added", "success");
+                            this.loadInbounds();
+                        }
+                    } catch(e) { console.error(e); }
+                },
+                async deleteInbound(id) {
+                    if(!confirm("Удалить Inbound?")) return;
+                    try {
+                        await fetch(`/api/inbounds/${id}`, { method: 'DELETE', headers: this.getHeaders() });
+                        this.showToast("Deleted", "info");
+                        this.loadInbounds();
+                    } catch(e) { console.error(e); }
+                },
+                async loadCustomKeys() {
+                    try {
+                        const res = await fetch('/api/custom_keys/', { headers: this.getHeaders() });
+                        if(res.ok) this.customKeys = await res.json();
+                    } catch(e) { console.error(e); }
+                },
+                async submitCustomKey() {
+                    if(!this.newCustomKey.link) return;
+                    try {
+                        const res = await fetch('/api/custom_keys/', {
+                            method: 'POST',
+                            headers: this.getHeaders(),
+                            body: JSON.stringify(this.newCustomKey)
+                        });
+                        if(res.ok) {
+                            this.isCustomKeyModalOpen = false;
+                            this.showToast("Key added", "success");
+                            this.loadCustomKeys();
+                        }
+                    } catch(e) { console.error(e); }
+                },
+                async deleteCustomKey(id) {
+                    if(!confirm("Удалить кастомный ключ?")) return;
+                    try {
+                        await fetch(`/api/custom_keys/${id}`, { method: 'DELETE', headers: this.getHeaders() });
+                        this.showToast("Deleted", "info");
+                        this.loadCustomKeys();
+                    } catch(e) { console.error(e); }
+                },
+                async loadSettings() {
+                    try {
+                        const res = await fetch('/api/settings/', { headers: this.getHeaders() });
+                        if(res.ok) this.settingsData = await res.json();
+                    } catch(e) { console.error(e); }
+                },
+                async saveSettings() {
+                    try {
+                        const res = await fetch('/api/settings/', {
+                            method: 'POST',
+                            headers: this.getHeaders(),
+                            body: JSON.stringify(this.settingsData)
+                        });
+                        if(res.ok) this.showToast("Settings Saved", "success");
                     } catch(e) { console.error(e); }
                 },
                 async submitAddUser() {
@@ -522,7 +666,7 @@ const { createApp } = Vue;
                         });
                         if (res.ok) {
                             this.isAddUserModalOpen = false;
-                            this.newUser = { username: '', data_limit_gb: 0, expire_days: 0, ip_limit: 0, reset_strategy: 'none', protocols: ['vless'] };
+                            this.newUser = { username: '', data_limit_gb: 0, expire_days: 0, ip_limit: 0, reset_strategy: 'none' };
                             this.showToast("Пользователь создан", "success");
                             this.fetchData();
                         } else {
@@ -537,12 +681,6 @@ const { createApp } = Vue;
                     this.showToast("Трафик сброшен", "info");
                     this.fetchData();
                 },
-                async revokeUser(id) {
-                    if(!confirm("Отозвать подписку?")) return;
-                    await fetch(`/api/users/${id}/revoke`, { method: 'POST', headers: this.getHeaders() });
-                    this.showToast("Подписка пересоздана", "success");
-                    this.fetchData();
-                },
                 async deleteUser(id) {
                     if(!confirm("Удалить пользователя?")) return;
                     try {
@@ -550,38 +688,6 @@ const { createApp } = Vue;
                         this.showToast("Пользователь удален", "info");
                         this.fetchData();
                     } catch(e) { console.error(e); }
-                },
-                async submitAddNode() {
-                    if(!this.newNodeName || !this.newNodeAddress) return;
-                    try {
-                        await fetch(`/api/nodes/?name=${this.newNodeName}&address=${this.newNodeAddress}`, { method: 'POST', headers: this.getHeaders() });
-                        this.isAddNodeModalOpen = false;
-                        this.newNodeName = "";
-                        this.newNodeAddress = "";
-                        this.showToast("Нода добавлена", "success");
-                        this.fetchData();
-                    } catch(e) { console.error(e); }
-                },
-                async deleteNode(id) {
-                    if(!confirm("Удалить ноду?")) return;
-                    try {
-                        await fetch(`/api/nodes/${id}`, { method: 'DELETE', headers: this.getHeaders() });
-                        this.showToast("Нода удалена", "info");
-                        this.fetchData();
-                    } catch(e) { console.error(e); }
-                },
-                async saveConfig() {
-                    try {
-                        const parsed = JSON.parse(this.xrayConfigText);
-                        await fetch(`/api/config/xray`, {
-                            method: 'POST',
-                            headers: this.getHeaders(),
-                            body: JSON.stringify(parsed)
-                        });
-                        this.showToast(this.t.save + " OK", "success");
-                    } catch(e) {
-                        this.showToast("Invalid JSON", "error");
-                    }
                 },
                 async loadLogs() {
                     this.logsOutput = "Loading...";
@@ -596,7 +702,6 @@ const { createApp } = Vue;
                     }
                 },
                 copySub(username) {
-                    // Fetch real sub_id to copy
                     const user = this.users.find(u => u.username === username);
                     if(!user) return;
                     const url = window.location.origin + "/sub/" + user.sub_id;
@@ -613,7 +718,7 @@ const { createApp } = Vue;
                             text: url,
                             width: 200,
                             height: 200,
-                            colorDark : "#000000",
+                            colorDark : "#0f172a",
                             colorLight : "#ffffff",
                             correctLevel : QRCode.CorrectLevel.M
                         });
@@ -629,7 +734,6 @@ const { createApp } = Vue;
             }
         }).mount('#app');
 
-        // Failsafe to remove v-cloak if Vue fails to do it for some reason
         setTimeout(() => {
             const app = document.getElementById('app');
             if (app && app.hasAttribute('v-cloak')) {
