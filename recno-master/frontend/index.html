@@ -332,12 +332,11 @@
                             <option value="vless">VLESS</option>
                             <option value="vmess">VMess</option>
                             <option value="trojan">Trojan</option>
-                            <option value="hysteria2">Hysteria2</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Transport</label>
-                        <select v-model="newInbound.transport" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" :disabled="newInbound.protocol === 'hysteria2'">
+                        <select v-model="newInbound.transport" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                             <option value="tcp">TCP</option>
                             <option value="ws">WebSocket</option>
                             <option value="grpc">gRPC</option>

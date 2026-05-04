@@ -29,8 +29,15 @@ def generate_xray_config(db: Session, config_path: str = "/etc/recno/config.json
             "api": {"tag": "api", "services": ["HandlerService", "StatsService"]},
             "stats": {},
             "policy": {"levels": {"0": {"statsUserUplink": True, "statsUserDownlink": True}}},
-            "routing": {"rules": []},
-            "outbounds": [{"protocol": "freedom", "tag": "direct"}]
+            "routing": {
+                "rules": [
+                    {"inboundTag": ["api"], "outboundTag": "api", "type": "field"}
+                ]
+            },
+            "outbounds": [
+                {"protocol": "freedom", "tag": "direct"},
+                {"protocol": "blackhole", "tag": "block"},
+            ]
         }
 
     inbounds = db.query(Inbound).filter(Inbound.node_id == None).all()
