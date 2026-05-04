@@ -1,10 +1,10 @@
 #!/bin/bash
-# RECNO (Marzban-like) CLI Interactive Menu
+# RECNO  CLI Interactive Menu
 
-function exit 0() {
+function show_menu() {
     clear
     echo "========================================="
-    echo "            RECNO (Marzban-like) PANEL CLI              "
+    echo "            RECNO  PANEL CLI              "
     echo "========================================="
     echo "1. Status (Статус сервисов)"
     echo "2. Restart (Перезапуск)"
@@ -13,7 +13,6 @@ function exit 0() {
     echo "5. Update Panel (Обновить панель)"
     echo "6. Update Xray (Обновить ядро Xray)"
     echo "7. Default Admin (Сброс пароля админа)"
-    echo "8. Uninstall"
     echo "8. Uninstall (Удалить RECNO)"
     echo "9. Backup Database (Бэкап)"
     echo "0. Exit (Выход)"
@@ -46,13 +45,11 @@ function handle_option() {
             journalctl -u recno-xray -f
             ;;
         5)
-            echo "Updating RECNO (Marzban-like) Panel..."
+            echo "Updating RECNO Panel..."
             if [ -d "/opt/recno/master" ]; then
                 cd /opt/recno/master
-                # In real scenario: git pull origin main
-                git fetch origin main 2>/dev/null || true
-                git reset --hard origin/main 2>/dev/null || true
-                /opt/recno/master/venv/bin/pip install -r backend/requirements.txt
+                git pull origin main
+                /opt/recno/master/venv/bin/pip install -r recno-master/backend/requirements.txt
                 systemctl restart recno-panel
                 echo "Panel updated successfully."
             else
@@ -96,7 +93,7 @@ print('Admin reset: admin / admin')
             exit 0
             ;;
         8)
-            echo -n "Are you sure you want to completely remove RECNO (Marzban-like)? [y/N]: "
+            echo -n "Are you sure you want to completely remove RECNO? [y/N]: "
             read CONFIRM
             if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
                 systemctl stop recno-panel recno-xray 2>/dev/null || true

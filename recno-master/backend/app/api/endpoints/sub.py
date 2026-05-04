@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.db.models import User
+from app.db.models import User, SystemSettings
 from app.services.subscription import generate_sub_links
 import json
 
@@ -23,20 +23,26 @@ def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(g
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    settings = db.query(SystemSettings).first()
+    sub_title = settings.sub_title if settings and settings.sub_title else "RECNO Proxy"
+    update_interval = str(settings.sub_update_interval) if settings else "24"
+
     host = request.headers.get('host', '127.0.0.1')
     user_agent = request.headers.get('user-agent', '')
 
-    # Headers for proxy clients
+    # Headers for modern proxy clients (Happ, INCY, Hiddify, v2rayNG etc)
     headers = {
         "Subscription-Userinfo": f"upload={user.data_used//2}; download={user.data_used//2}; total={user.data_limit}; expire={int(user.expire_date.timestamp()) if user.expire_date else 0}",
-        "Profile-Update-Interval": "24",
-        "Profile-Title": "RECNO Proxy",
+        "Profile-Update-Interval": update_interval,
+        "Profile-Title": urllib.parse.quote(sub_title.encode('utf-8')) if sub_title else "RECNO",
         "profile-web-page-url": f"https://{host}/sub/{user.sub_id}"
     }
+
     if is_browser(user_agent):
         sub_link = f"https://{host}/sub/{user.sub_id}"
         import html
         safe_username = html.escape(user.username)
+        safe_title = html.escape(sub_title)
 
         # HTML Page for browser
         html_content = f"""
@@ -45,7 +51,7 @@ def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(g
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>RECNO - Ваша Подписка</title>
+            <title>{safe_title} - Ваша Подписка</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -53,7 +59,7 @@ def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(g
         </head>
         <body class="bg-slate-900 text-gray-200 min-h-screen flex items-center justify-center p-4">
             <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-lg border border-slate-700">
-                <h1 class="text-3xl font-bold text-center text-white mb-2">RECNO PROXY</h1>
+                <h1 class="text-3xl font-bold text-center text-white mb-2">{safe_title}</h1>
                 <p class="text-center text-gray-400 mb-8">Привет, <span class="text-blue-400">{safe_username}</span>!</p>
 
 
@@ -134,4 +140,5 @@ def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(g
     else:
         # Return Base64 Sub Link for Proxy Clients
         sub_content = generate_sub_links(db, user, host)
-        return JSONResponse(content=sub_content, headers=headers)
+        # Using PlainTextResponse is better for base64 output without JSON wrappers
+        return PlainTextResponse(content=sub_content, headers=headers)

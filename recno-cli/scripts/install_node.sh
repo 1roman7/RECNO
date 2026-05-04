@@ -59,7 +59,7 @@ echo_info "Генерация SSL сертификата (Self-Signed) для gR
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/recno/certs/private.key -out /etc/recno/certs/fullchain.cer -subj "/CN=$DOMAIN" 2>/dev/null || true
 echo_success "SSL сертификат сгенерирован."
 
-echo_info "Установка ядра Xray-core (изолировано, параллельно Marzban)..."
+echo_info "Установка ядра Xray-core (изолировано, параллельно другим панелям)..."
 XRAY_VERSION=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r .tag_name)
 wget -qO /tmp/xray.zip "https://github.com/XTLS/Xray-core/releases/download/${XRAY_VERSION}/Xray-linux-64.zip"
 unzip -o -q /tmp/xray.zip -d /opt/recno/xray

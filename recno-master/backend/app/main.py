@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.endpoints import users, nodes, config, auth, sub, system, hosts
+from app.api.endpoints import users, nodes, auth, sub, system, inbounds, custom_keys, settings
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -24,8 +24,9 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Авторизация"])
 app.include_router(users.router, prefix="/api/users", tags=["Пользователи"])
 app.include_router(nodes.router, prefix="/api/nodes", tags=["Ноды"])
-app.include_router(config.router, prefix="/api/config", tags=["Настройки"])
-app.include_router(hosts.router, prefix="/api/hosts", tags=["Хосты"])
+app.include_router(inbounds.router, prefix="/api/inbounds", tags=["Inbounds"])
+app.include_router(custom_keys.router, prefix="/api/custom_keys", tags=["Custom Keys"])
+app.include_router(settings.router, prefix="/api/settings", tags=["Settings"])
 app.include_router(sub.router, prefix="/sub", tags=["Подписки"])
 app.include_router(system.router, prefix="/api/system", tags=["Система"])
 

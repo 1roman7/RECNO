@@ -207,7 +207,7 @@ fi
 
 
 echo_info "Настройка CLI утилиты..."
-cp /opt/recno/master/recno-cli/scripts/marzban_cli_clone.sh /usr/local/bin/recno
+cp /opt/recno/master/recno-cli/scripts/recno_cli.sh /usr/local/bin/recno
 chmod +x /usr/local/bin/recno
 
 
