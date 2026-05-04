@@ -1,7 +1,7 @@
 #!/bin/bash
 # RECNO (Marzban-like) CLI Interactive Menu
 
-function show_menu() {
+function exit 0() {
     clear
     echo "========================================="
     echo "            RECNO (Marzban-like) PANEL CLI              "
@@ -29,15 +29,15 @@ function handle_option() {
             systemctl status recno-panel --no-pager || echo "Panel not installed or stopped."
             echo "--- Xray Status ---"
             systemctl status recno-xray --no-pager || echo "Xray not installed or stopped."
-            read -p "Press enter to continue..."
-            show_menu
+            echo "Press enter to continue..."
+            exit 0
             ;;
         2)
             echo "Restarting services..."
             systemctl restart recno-panel recno-xray 2>/dev/null || true
             echo "Done."
-            read -p "Press enter to continue..."
-            show_menu
+            echo "Press enter to continue..."
+            exit 0
             ;;
         3)
             journalctl -u recno-panel -f
@@ -58,8 +58,8 @@ function handle_option() {
             else
                 echo "Panel directory not found. Is this a node?"
             fi
-            read -p "Press enter to continue..."
-            show_menu
+            echo "Press enter to continue..."
+            exit 0
             ;;
         6)
             echo "Updating Xray Core..."
@@ -69,14 +69,14 @@ function handle_option() {
             rm /tmp/xray.zip
             systemctl restart recno-xray
             echo "Xray updated to $XRAY_VERSION."
-            read -p "Press enter to continue..."
-            show_menu
+            echo "Press enter to continue..."
+            exit 0
             ;;
         7)
             echo "Creating/Resetting admin user..."
             if [ -f "/opt/recno/master/venv/bin/python" ]; then
                 /opt/recno/master/venv/bin/python -c "
-import sys; sys.path.append('/opt/recno/master/backend')
+import sys; sys.path.append('/opt/recno/master/recno-master/backend')
 from app.db.database import SessionLocal
 from app.db.models import Admin
 from app.api.endpoints.auth import get_password_hash
@@ -92,8 +92,8 @@ print('Admin reset: admin / admin')
             else:
                 echo "Backend not found."
             fi
-            read -p "Press enter to continue..."
-            show_menu
+            echo "Press enter to continue..."
+            exit 0
             ;;
         8)
             echo -n "Are you sure you want to completely remove RECNO (Marzban-like)? [y/N]: "
@@ -110,10 +110,10 @@ print('Admin reset: admin / admin')
         9)
             echo "Creating Backup..."
             mkdir -p /opt/recno/backups
-            tar -czf /opt/recno/backups/backup_$(date +%F_%T).tar.gz /opt/recno/master/backend/recno.db /etc/recno/config.json 2>/dev/null || true
+            tar -czf /opt/recno/backups/backup_$(date +%F_%T).tar.gz /opt/recno/master/recno-master/backend/recno.db /etc/recno/config.json 2>/dev/null || true
             echo "Backup saved in /opt/recno/backups"
-            read -p "Press enter to continue..."
-            show_menu
+            echo "Press enter to continue..."
+            exit 0
             ;;
         0)
 
@@ -122,13 +122,13 @@ print('Admin reset: admin / admin')
         *)
             echo "Invalid option."
             sleep 1
-            show_menu
+            exit 0
             ;;
     esac
 }
 
 if [ -z "$1" ]; then
-    show_menu
+    exit 0
 else
     # Allow CLI args like `recno restart`
     case "$1" in
