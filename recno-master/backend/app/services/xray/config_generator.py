@@ -68,6 +68,8 @@ def generate_xray_config(db: Session, config_path: str = "/etc/recno/config.json
                     clients.append({"id": pk.uuid, "email": u.username, "level": 0})
                 elif inb.protocol == "trojan":
                     clients.append({"password": pk.uuid, "email": u.username, "level": 0})
+                elif inb.protocol == "hysteria2":
+                    clients.append({"password": pk.uuid, "email": u.username})
 
         inb_config = {
             "tag": inb.remark,
@@ -79,6 +81,17 @@ def generate_xray_config(db: Session, config_path: str = "/etc/recno/config.json
                 "security": inb.security
             }
         }
+
+        if inb.protocol == "hysteria2":
+            inb_config["settings"] = {
+                "clients": clients,
+                "ignoreClientBandwidth": False
+            }
+            inb_config["streamSettings"]["security"] = "tls"
+            inb_config["streamSettings"]["tlsSettings"] = {
+                "serverName": inb.sni or "google.com",
+                "alpn": inb.alpn.split(",") if inb.alpn else ["h3"]
+            }
 
         # TLS/Reality config
         if inb.security == "reality":

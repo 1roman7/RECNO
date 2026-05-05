@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db.models import User, SystemSettings
 from app.services.subscription import generate_sub_links
-import json
+from urllib.parse import quote
 
 router = APIRouter()
 
@@ -34,7 +34,7 @@ def get_subscription(user_sub_id: str, request: Request, db: Session = Depends(g
     headers = {
         "Subscription-Userinfo": f"upload={user.data_used//2}; download={user.data_used//2}; total={user.data_limit}; expire={int(user.expire_date.timestamp()) if user.expire_date else 0}",
         "Profile-Update-Interval": update_interval,
-        "Profile-Title": urllib.parse.quote(sub_title.encode('utf-8')) if sub_title else "RECNO",
+        "Profile-Title": quote(sub_title.encode('utf-8')) if sub_title else "RECNO",
         "profile-web-page-url": f"https://{host}/sub/{user.sub_id}"
     }
 
