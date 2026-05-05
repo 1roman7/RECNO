@@ -1,7 +1,8 @@
 import base64
 import urllib.parse
+import uuid
 from sqlalchemy.orm import Session
-from app.db.models import User, CustomKey, Inbound
+from app.db.models import User, CustomKey, Inbound, ProxyKey
 
 def generate_sub_links(db: Session, user: User, host: str = "127.0.0.1") -> str:
     links = []
@@ -11,6 +12,13 @@ def generate_sub_links(db: Session, user: User, host: str = "127.0.0.1") -> str:
     user_uuid = None
     if user.keys:
         user_uuid = user.keys[0].uuid
+    else:
+        # Ensure user always has at least one primary key for subscription output
+        pk = ProxyKey(user_id=user.id, remark="Primary", uuid=str(uuid.uuid4()))
+        db.add(pk)
+        db.commit()
+        db.refresh(pk)
+        user_uuid = pk.uuid
 
     if user_uuid:
         inbounds = db.query(Inbound).all()
