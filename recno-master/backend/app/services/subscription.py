@@ -39,7 +39,7 @@ def generate_sub_links(db: Session, user: User, host: str = "127.0.0.1") -> str:
                 import json
                 v = {
                     "v": "2",
-                    "ps": inbound.remark,
+                    "ps": urllib.parse.unquote(remark), # unquote since we quoted it earlier, or just use inbound.remark
                     "add": node_addr,
                     "port": str(inbound.port),
                     "id": user_uuid,
@@ -53,6 +53,7 @@ def generate_sub_links(db: Session, user: User, host: str = "127.0.0.1") -> str:
                     "alpn": inbound.alpn if inbound.alpn else "",
                     "fp": inbound.fingerprint if inbound.fingerprint else ""
                 }
+                v["ps"] = inbound.remark
                 import base64
                 b = base64.b64encode(json.dumps(v).encode('utf-8')).decode('utf-8')
                 links.append(f"vmess://{b}")
