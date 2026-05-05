@@ -35,6 +35,36 @@ def generate_sub_links(db: Session, user: User, host: str = "127.0.0.1") -> str:
                 link += f"#{remark}"
                 links.append(link)
 
+            elif inbound.protocol == "vmess":
+                import json
+                v = {
+                    "v": "2",
+                    "ps": inbound.remark,
+                    "add": node_addr,
+                    "port": str(inbound.port),
+                    "id": user_uuid,
+                    "aid": "0",
+                    "net": inbound.transport,
+                    "type": "none",
+                    "host": inbound.server_names.split(",")[0] if inbound.server_names else "",
+                    "path": "",
+                    "tls": inbound.security if inbound.security in ["tls"] else "",
+                    "sni": inbound.sni if inbound.sni else "",
+                    "alpn": inbound.alpn if inbound.alpn else "",
+                    "fp": inbound.fingerprint if inbound.fingerprint else ""
+                }
+                import base64
+                b = base64.b64encode(json.dumps(v).encode('utf-8')).decode('utf-8')
+                links.append(f"vmess://{b}")
+
+            elif inbound.protocol == "trojan":
+                link = f"trojan://{user_uuid}@{node_addr}:{inbound.port}?type={inbound.transport}&security={inbound.security}"
+                if inbound.sni: link += f"&sni={inbound.sni}"
+                if inbound.fingerprint: link += f"&fp={inbound.fingerprint}"
+                if inbound.alpn: link += f"&alpn={urllib.parse.quote(inbound.alpn)}"
+                link += f"#{remark}"
+                links.append(link)
+
     # Add custom keys (Global + Targeted)
     global_custom_keys = db.query(CustomKey).filter(CustomKey.is_global == True).all()
     all_custom_keys = list(set(global_custom_keys + user.custom_keys))
