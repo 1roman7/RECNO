@@ -5,6 +5,7 @@ from app.db.database import get_db
 from app.db.models import User, SystemSettings
 from app.services.subscription import generate_sub_links
 import json
+import urllib.parse
 
 router = APIRouter()
 

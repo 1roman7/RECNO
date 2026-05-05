@@ -344,7 +344,7 @@
                             <option value="hysteria2">Hysteria 2</option>
                         </select>
                     </div>
-                    <div>
+                    <div v-if="newInbound.protocol !== 'hysteria2'">
                         <label class="block text-sm font-medium mb-1">Transport</label>
                         <select v-model="newInbound.transport" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                             <option value="tcp">TCP</option>
@@ -353,7 +353,7 @@
                             <option value="xhttp">XHTTP</option>
                         </select>
                     </div>
-                    <div>
+                    <div v-if="newInbound.protocol !== 'hysteria2'">
                         <label class="block text-sm font-medium mb-1">Security</label>
                         <select v-model="newInbound.security" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                             <option value="none">None</option>
@@ -361,7 +361,7 @@
                             <option value="reality">Reality</option>
                         </select>
                     </div>
-                    <div>
+                    <div v-if="newInbound.protocol !== 'hysteria2'">
                         <label class="block text-sm font-medium mb-1">Fingerprint</label>
                         <select v-model="newInbound.fingerprint" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                             <option value="chrome">Chrome</option>
@@ -379,19 +379,19 @@
                 </div>
 
                 <div class="space-y-4 mb-6">
-                    <div>
+                    <div v-if="newInbound.protocol !== 'hysteria2'">
                         <label class="block text-sm font-medium mb-1">SNI</label>
                         <input v-model="newInbound.sni" type="text" placeholder="yahoo.com" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <div v-if="newInbound.security === 'reality'">
+                    <div v-if="newInbound.protocol !== 'hysteria2' && newInbound.security === 'reality'">
                         <label class="block text-sm font-medium mb-1">Dest (Reality)</label>
                         <input v-model="newInbound.dest" type="text" placeholder="yahoo.com" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <div v-if="newInbound.security === 'reality'">
+                    <div v-if="newInbound.protocol !== 'hysteria2' && newInbound.security === 'reality'">
                         <label class="block text-sm font-medium mb-1">Server Names (comma sep)</label>
                         <input v-model="newInbound.server_names" type="text" placeholder="yahoo.com,www.yahoo.com" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <div>
+                    <div v-if="newInbound.protocol !== 'hysteria2'">
                         <label class="block text-sm font-medium mb-1">ALPN (comma sep)</label>
                         <input v-model="newInbound.alpn" type="text" placeholder="h2,http/1.1" class="w-full border dark:border-slate-700 dark:bg-slate-800 p-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
@@ -611,16 +611,30 @@
                 },
                 async submitInbound() {
                     if(!this.newInbound.remark || !this.newInbound.port) return;
+                    const payload = { ...this.newInbound };
+                    if (payload.protocol === 'hysteria2') {
+                        payload.transport = 'tcp';
+                        payload.security = 'tls';
+                        payload.sni = '';
+                        payload.fingerprint = 'chrome';
+                        payload.dest = '';
+                        payload.server_names = '';
+                        payload.alpn = '';
+                    }
                     try {
                         const res = await fetch('/api/inbounds/', {
                             method: 'POST',
                             headers: this.getHeaders(),
-                            body: JSON.stringify(this.newInbound)
+                            body: JSON.stringify(payload)
                         });
                         if(res.ok) {
                             this.isInboundModalOpen = false;
+                            this.newInbound = { node_id: null, remark: '', protocol: 'vless', port: 443, transport: 'tcp', security: 'none', sni: '', fingerprint: 'chrome', dest: '', server_names: '', alpn: '' };
                             this.showToast("Inbound added", "success");
                             this.loadInbounds();
+                        } else {
+                            const errorData = await res.json().catch(() => ({}));
+                            this.showToast(errorData.detail || "Failed to add inbound", "error");
                         }
                     } catch(e) { console.error(e); }
                 },
@@ -648,8 +662,12 @@
                         });
                         if(res.ok) {
                             this.isCustomKeyModalOpen = false;
+                            this.newCustomKey = { remark: '', link: '', is_global: false, user_ids: [] };
                             this.showToast("Key added", "success");
                             this.loadCustomKeys();
+                        } else {
+                            const errorData = await res.json().catch(() => ({}));
+                            this.showToast(errorData.detail || "Failed to add key", "error");
                         }
                     } catch(e) { console.error(e); }
                 },
@@ -746,6 +764,18 @@
                         });
                     }, 100);
                 }
+            },
+            watch: {
+                'newInbound.protocol'(value) {
+                    if (value === 'hysteria2') {
+                        this.newInbound.transport = 'tcp';
+                        this.newInbound.security = 'tls';
+                        this.newInbound.sni = '';
+                        this.newInbound.dest = '';
+                        this.newInbound.server_names = '';
+                        this.newInbound.alpn = '';
+                    }
+                },
             },
             mounted() {
                 const savedLang = localStorage.getItem('recno_lang');
